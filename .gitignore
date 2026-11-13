@@ -1,0 +1,61 @@
+# Build output
+build/
+out/
+*.o
+*.obj
+*.lib
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# IDE and editor
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Large media and models (never commit)
+*.bin
+*.gguf
+*.wav
+*.mp3
+*.mp4
+*.mkv
+*.flac
+*.ogg
+*.m4a
+*.webm
+*.mov
+
+# Flutter
+desktop/build/
+desktop/.dart_tool/
+desktop/.packages
+desktop/.flutter-plugins*
+mobile/build/
+mobile/.dart_tool/
+mobile/.packages
+mobile/.flutter-plugins*
+.dart_tool/
+
+# Local-only files are excluded via .git/info/exclude, never here
