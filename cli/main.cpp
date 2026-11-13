@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -325,6 +326,15 @@ int main(int argc, char** argv)
     eopts.model_path = model_path;
     eopts.n_threads = cli.threads;
     eopts.use_gpu = cli.gpu;
+
+    if (!cli.outdir.empty()) {
+        std::error_code ec;
+        std::filesystem::create_directories(cli.outdir, ec);
+        if (ec) {
+            std::fprintf(stderr, "kikoe: cannot create outdir '%s': %s\n", cli.outdir.c_str(), ec.message().c_str());
+            return 2;
+        }
+    }
 
     err = kikoe::ErrorCode::Ok;
     auto engine = kikoe::Engine::create(eopts, err);
