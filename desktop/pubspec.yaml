@@ -1,0 +1,26 @@
+name: kikoe_desktop
+description: "Kikoe desktop app: free, unlimited, offline audio/video transcription."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  file_picker: ^10.2.0
+  path: ^1.9.1
+  desktop_drop: ^0.7.0
+  ffi: ^2.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon.png
