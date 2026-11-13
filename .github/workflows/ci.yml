@@ -41,6 +41,50 @@ jobs:
           if (-not $bin) { throw "kikoe binary not found in build output" }
           & $bin --help
 
+  desktop:
+    name: Build desktop (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Build FFI library
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Analyze and test
+        working-directory: desktop
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+
+      - name: Build Windows app
+        working-directory: desktop
+        run: flutter build windows --release
+
+      - name: Bundle FFI library
+        shell: pwsh
+        run: |
+          $bundle = "desktop/build/windows/x64/runner/Release"
+          Copy-Item "build/Release/kikoe_ffi.dll" $bundle
+          Compress-Archive -Path "$bundle/*" -DestinationPath "kikoe-windows-x64.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kikoe-windows-x64
+          path: kikoe-windows-x64.zip
+          retention-days: 14
+
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
