@@ -35,11 +35,29 @@ class MainActivity : FlutterActivity() {
     }
 
     // Decodes any media the platform supports to mono 16 kHz float32 PCM,
-    // interleaved as little-endian bytes. Used for everything except WAV,
-    // which the native core can read itself.
+    // Decode any media the platform supports to mono 16 kHz float32 PCM,
+    // interleaved as little-endian bytes. Accepts plain file paths and
+    // content:// or file:// URIs (both produced by SAF pickers and share
+    // intents).
     private fun decodeToFloat32Mono16k(path: String): ByteArray {
         val extractor = MediaExtractor()
-        extractor.setDataSource(path)
+        // When the media is a content:// or file:// URI, MediaExtractor needs
+        // a seekable FileDescriptor that stays open for the whole decode.
+        var pfd: android.os.ParcelFileDescriptor? = null
+        try {
+            if (path.startsWith("content://") || path.startsWith("file://")) {
+                val uri = android.net.Uri.parse(path)
+                pfd = contentResolver.openFileDescriptor(uri, "r")
+                    ?: throw IllegalArgumentException("cannot open media uri")
+                extractor.setDataSource(pfd.fileDescriptor)
+            } else {
+                extractor.setDataSource(path)
+            }
+        } catch (e: Exception) {
+            pfd?.close()
+            extractor.release()
+            throw e
+        }
 
         var audioTrack = -1
         var format: MediaFormat? = null
@@ -54,6 +72,7 @@ class MainActivity : FlutterActivity() {
         }
         if (audioTrack < 0 || format == null) {
             extractor.release()
+            pfd?.close()
             throw IllegalArgumentException("no audio track found")
         }
         extractor.selectTrack(audioTrack)
@@ -108,6 +127,7 @@ class MainActivity : FlutterActivity() {
         decoder.stop()
         decoder.release()
         extractor.release()
+        pfd?.close()
 
         val raw = pcmBytes.toByteArray()
         val shorts = ByteBuffer.wrap(raw).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
