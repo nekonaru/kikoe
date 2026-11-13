@@ -220,8 +220,14 @@ class AppState extends ChangeNotifier {
     if (result == null || result.length < 4 || result.length % 4 != 0) {
       throw Exception('decoder returned invalid PCM (${result?.length ?? 0} bytes)');
     }
-    final floats = result.buffer.asFloat32List(result.offsetInBytes, result.lengthInBytes ~/ 4);
-    return floats;
+    // The platform may hand us a view into a larger buffer at any byte
+    // offset, so decode with byte-level reads into a fresh aligned list.
+    final data = ByteData.sublistView(result);
+    final out = Float32List(result.lengthInBytes ~/ 4);
+    for (var i = 0; i < out.length; i++) {
+      out[i] = data.getFloat32(i * 4, Endian.little);
+    }
+    return out;
   }
 
   /// Ask the worker to render the last transcription as [format]. The result
