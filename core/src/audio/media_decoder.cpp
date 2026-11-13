@@ -1,6 +1,7 @@
 #include "media_decoder.h"
 
 #include <array>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <string>

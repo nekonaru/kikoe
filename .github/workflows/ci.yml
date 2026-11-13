@@ -39,7 +39,7 @@ jobs:
           $candidates = @("build/kikoe", "build/Release/kikoe.exe", "build/kikoe.exe", "build/Release/kikoe")
           $bin = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $bin) { throw "kikoe binary not found in build output" }
-          & $bin
+          & $bin --help
 
   desktop:
     name: Build desktop (windows-latest)
