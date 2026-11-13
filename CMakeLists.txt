@@ -38,6 +38,10 @@ set(WHISPER_ALL_WARNINGS OFF CACHE BOOL "" FORCE)
 # Static whisper/ggml so the CLI is a single binary and tests need no PATH setup.
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
+# ggml runs its own thread pool; OpenMP would add a runtime DLL dependency
+# that minimal installers and Android builds cannot rely on.
+set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
+
 if(KIKOE_USE_CUDA)
     set(GGML_CUDA ON CACHE BOOL "" FORCE)
 elseif(KIKOE_USE_GPU)
