@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int main(void)
@@ -73,6 +74,43 @@ int main(void)
     /* free: NULL is a no-op */
     kk_engine_free(NULL);
     kk_cancel(NULL);
+
+    /* Optional end-to-end: set KIKOE_TEST_MODEL to a ggml model and
+     * KIKOE_TEST_WAV to a 16 kHz mono WAV to exercise the full invoke path. */
+    {
+        const char* model = getenv("KIKOE_TEST_MODEL");
+        const char* wav = getenv("KIKOE_TEST_WAV");
+        if (model && wav) {
+            kk_engine_params p = {0};
+            p.model_path = model;
+            int cerr = -1;
+            kk_engine* e = kk_engine_create(&p, &cerr);
+            assert(e != NULL && cerr == KK_OK);
+            assert(kk_transcribe(e, wav, NULL, NULL, NULL, NULL) == KK_OK);
+            assert(kk_last_segment_count(e) > 0);
+            {
+                kk_segment seg;
+                assert(kk_last_segment_get(e, 0, &seg) == KK_OK);
+                assert(seg.end_ms >= seg.start_ms);
+                assert(seg.text != NULL);
+            }
+            {
+                unsigned long long needed = 0;
+                assert(kk_format_last(e, "srt", NULL, 0, &needed) == KK_OK);
+                assert(needed > 10);
+                char* buf = (char*)malloc((size_t)needed);
+                assert(buf != NULL);
+                unsigned long long written = 0;
+                assert(kk_format_last(e, "srt", buf, needed, &written) == KK_OK);
+                assert(strstr(buf, "-->") != NULL);
+                free(buf);
+            }
+            kk_engine_free(e);
+            printf("end-to-end transcription ok\n");
+        } else {
+            printf("skip: KIKOE_TEST_MODEL/KIKOE_TEST_WAV not set\n");
+        }
+    }
 
     printf("kikoe C API contract ok\n");
     return 0;
