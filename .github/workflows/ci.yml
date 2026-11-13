@@ -85,6 +85,61 @@ jobs:
           path: kikoe-windows-x64.zip
           retention-days: 14
 
+  mobile:
+    name: Build Android APK (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+
+      - name: Install Android NDK
+        run: |
+          echo y | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --install "ndk;28.2.13676358" >/dev/null
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/28.2.13676358" >> "$GITHUB_ENV"
+
+      - name: Build FFI libraries for both ABIs
+        run: |
+          for abi in arm64-v8a x86_64; do
+            cmake -S . -B "build-android-$abi" -G Ninja \
+              -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
+              -DANDROID_ABI="$abi" -DANDROID_PLATFORM=android-24 -DANDROID_STL=c++_static \
+              -DKIKOE_BUILD_CLI=OFF -DKIKOE_BUILD_TESTS=OFF -DKIKOE_BUILD_FFI=ON \
+              -DGGML_OPENMP=OFF -DCMAKE_BUILD_TYPE=Release
+            cmake --build "build-android-$abi" --target kikoe-ffi
+            mkdir -p "mobile/android/app/src/main/jniLibs/$abi"
+            cp "build-android-$abi/libkikoe_ffi.so" "mobile/android/app/src/main/jniLibs/$abi/"
+          done
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Analyze and test
+        working-directory: mobile
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
+
+      - name: Build release APKs
+        working-directory: mobile
+        run: flutter build apk --release --split-per-abi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kikoe-android-apks
+          path: mobile/build/app/outputs/flutter-apk/*-release.apk
+          retention-days: 14
+
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest

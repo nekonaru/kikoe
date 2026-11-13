@@ -1,0 +1,33 @@
+name: kikoe_mobile
+description: "Kikoe mobile app: free, unlimited, offline audio/video transcription for Android."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.0
+
+# Dependencies are kept minimal on purpose; licenses are noted for the ones
+# that are not part of Flutter itself.
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  ffi: ^2.1.4                    # BSD-3
+  path: ^1.9.1                   # BSD-3
+  path_provider: ^2.1.5          # BSD-3
+  file_picker: ^10.2.0           # MIT
+  receive_sharing_intent: ^1.8.1 # MIT
+  flutter_local_notifications: ^19.4.0 # MIT
+  share_plus: ^12.0.1            # MIT
+  http: ^1.4.0                   # BSD-3
+  crypto: ^3.0.6                 # BSD-3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon.png
