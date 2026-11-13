@@ -17,7 +17,7 @@ endif()
 
 option(KIKOE_BUILD_CLI "Build the kikoe command line tool" ON)
 option(KIKOE_BUILD_TESTS "Build the unit tests" ON)
-option(KIKOE_BUILD_FFI "Build kikoe-ffi, the shared library for Dart FFI (desktop and mobile)" OFF)
+option(KIKOE_BUILD_FFI "Build kikoe-ffi, the shared library for Dart FFI (desktop and mobile)" ON)
 option(KIKOE_USE_GPU "Build whisper.cpp with GPU acceleration (CPU is the default and tested path)" OFF)
 option(KIKOE_USE_CUDA "Build whisper.cpp with CUDA acceleration" OFF)
 
