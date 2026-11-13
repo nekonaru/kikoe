@@ -52,7 +52,7 @@ jobs:
 
       - name: Build FFI library
         run: |
-          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build --config Release
 
       - name: Setup Flutter
