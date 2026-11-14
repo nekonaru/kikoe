@@ -16,6 +16,7 @@ enum class ErrorCode {
     OutOfMemory,       // allocation failure or unexpectedly small buffers
     EngineFailed,      // whisper.cpp returned an internal error
     InvalidArgument,   // caller passed an invalid parameter
+    AudioTooLong,      // decoded PCM exceeds the supported duration (4 hours)
 };
 
 // Human readable, stable English description. Never null.

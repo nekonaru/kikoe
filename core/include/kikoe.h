@@ -91,6 +91,7 @@ enum kk_error {
     KK_ERR_OUT_OF_MEMORY = 9,
     KK_ERR_ENGINE = 10,
     KK_ERR_INVALID_ARGUMENT = 11,
+    KK_ERR_AUDIO_TOO_LONG = 12,
 };
 
 /* Human readable description of an error code. Never NULL. */

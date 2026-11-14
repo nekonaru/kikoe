@@ -17,6 +17,7 @@ const char* error_string(ErrorCode code)
     case ErrorCode::OutOfMemory:       return "out of memory";
     case ErrorCode::EngineFailed:      return "the speech recognition engine failed";
     case ErrorCode::InvalidArgument:   return "invalid argument";
+    case ErrorCode::AudioTooLong:      return "the audio is too long (maximum 4 hours per file)";
     }
     return "unknown error";
 }
