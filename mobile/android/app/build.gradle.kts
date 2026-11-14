@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "io.github.nekonaru.kikoe"
-    compileSdk = flutter.compileSdkVersion
+    // receive_sharing_intent is compiled against Android SDK 37, so the app must be too.
+    compileSdk = 37
     ndkVersion = "28.2.13676358"
 
     compileOptions {
