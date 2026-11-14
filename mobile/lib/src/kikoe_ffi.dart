@@ -63,6 +63,14 @@ typedef KKTranscribePcm = int Function(
 typedef KKCancelNative = Void Function(Pointer<Void> engine);
 typedef KKCancel = void Function(Pointer<Void> engine);
 
+typedef KKLastSegmentCountNative = Int32 Function(Pointer<Void> engine);
+typedef KKLastSegmentCount = int Function(Pointer<Void> engine);
+
+typedef KKLastSegmentGetNative = Int32 Function(
+    Pointer<Void> engine, Int32 index, Pointer<KkSegment> outSegment);
+typedef KKLastSegmentGet = int Function(
+    Pointer<Void> engine, int index, Pointer<KkSegment> outSegment);
+
 typedef KKFormatLastNative = Int32 Function(
     Pointer<Void> engine,
     Pointer<Utf8> format,
@@ -141,6 +149,10 @@ class KikoeFFI {
     transcribe = _lib.lookupFunction<KKTranscribeNative, KKTranscribe>('kk_transcribe');
     transcribePcm = _lib.lookupFunction<KKTranscribePcmNative, KKTranscribePcm>('kk_transcribe_pcm');
     cancel = _lib.lookupFunction<KKCancelNative, KKCancel>('kk_cancel');
+    lastSegmentCount =
+        _lib.lookupFunction<KKLastSegmentCountNative, KKLastSegmentCount>('kk_last_segment_count');
+    lastSegmentGet =
+        _lib.lookupFunction<KKLastSegmentGetNative, KKLastSegmentGet>('kk_last_segment_get');
     formatLast = _lib.lookupFunction<KKFormatLastNative, KKFormatLast>('kk_format_last');
     engineFree = _lib.lookupFunction<KKEngineFreeNative, KKEngineFree>('kk_engine_free');
     errorString = _lib.lookupFunction<KKErrorStringNative, KKErrorString>('kk_error_string');
@@ -159,6 +171,8 @@ class KikoeFFI {
   late final KKTranscribe transcribe;
   late final KKTranscribePcm transcribePcm;
   late final KKCancel cancel;
+  late final KKLastSegmentCount lastSegmentCount;
+  late final KKLastSegmentGet lastSegmentGet;
   late final KKFormatLast formatLast;
   late final KKEngineFree engineFree;
   late final KKErrorString errorString;

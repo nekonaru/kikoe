@@ -249,21 +249,6 @@ void _workerMain(SendPort readyPort) {
         final samplesPtr = calloc<Float>(samples.length);
         samplesPtr.asTypedList(samples.length).setAll(0, samples);
 
-        final progress = NativeCallable<KkProgressCb>.listener((int percent, Pointer<Void> user) {
-          emit({'type': 'transcribeProgress', 'id': id, 'percent': percent});
-        });
-        final segmentCb = NativeCallable<KkSegmentCb>.listener((Pointer<KkSegment> segPtr, Pointer<Void> user) {
-          if (segPtr == nullptr) return;
-          final seg = segPtr.ref;
-          emit({
-            'type': 'segment',
-            'id': id,
-            'startMs': seg.startMs,
-            'endMs': seg.endMs,
-            'text': seg.text.toDartString(),
-          });
-        });
-
         final language = (msg['language'] as String).toNativeUtf8();
         final promptText = msg['initialPrompt'] as String;
         final promptPtr = promptText.isEmpty ? nullptr : promptText.toNativeUtf8();
@@ -277,8 +262,8 @@ void _workerMain(SendPort readyPort) {
           samplesPtr,
           samples.length,
           options,
-          progress.nativeFunction,
-          segmentCb.nativeFunction,
+          nullptr,  // progress: reported post-hoc, not through FFI callbacks
+          nullptr,  // segment callbacks: harvested after the call returns
           nullptr,
         );
 
@@ -286,10 +271,23 @@ void _workerMain(SendPort readyPort) {
         calloc.free(language);
         if (promptPtr != nullptr) calloc.free(promptPtr);
         calloc.free(samplesPtr);
-        progress.close();
-        segmentCb.close();
 
         if (rc == kKkOk) {
+          // Harvest segments from the engine after the blocking FFI call returns.
+          final count = lib.lastSegmentCount(engine);
+          for (var i = 0; i < count; i++) {
+            final src = calloc<KkSegment>();
+            if (lib.lastSegmentGet(engine, i, src) == kKkOk) {
+              emit({
+                'type': 'segment',
+                'id': id,
+                'startMs': src.ref.startMs,
+                'endMs': src.ref.endMs,
+                'text': src.ref.text.toDartString(),
+              });
+            }
+            calloc.free(src);
+          }
           emit({'type': 'transcribeDone', 'id': id});
         } else if (rc == kKkErrCancelled) {
           emit({'type': 'transcribeFailed', 'id': id, 'message': 'cancelled', 'cancelled': true});

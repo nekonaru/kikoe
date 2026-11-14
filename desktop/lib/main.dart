@@ -187,7 +187,7 @@ class _ControlPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = state;
     final model = s.selectedModel!;
-    final downloading = s.downloadPercentOf(model.name);
+    final downloading = s.downloadingOf(model.name);
 
     return Container(
       width: 340,
@@ -217,7 +217,7 @@ class _ControlPanel extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           if (!s.selectedModelCached)
-            _DownloadBlock(state: s, model: model, percent: downloading)
+            _DownloadBlock(state: s, model: model, downloading: downloading)
           else
             Text(
               model.note,
@@ -337,22 +337,22 @@ class _SectionLabel extends StatelessWidget {
 }
 
 class _DownloadBlock extends StatelessWidget {
-  const _DownloadBlock({required this.state, required this.model, required this.percent});
+  const _DownloadBlock({required this.state, required this.model, required this.downloading});
 
   final AppState state;
   final ModelEntry model;
-  final int? percent;
+  final bool downloading;
 
   @override
   Widget build(BuildContext context) {
-    if (percent != null) {
+    if (downloading) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Downloading ${model.name}… $percent%',
+          Text('Downloading ${model.name}.',
               style: const TextStyle(fontSize: 12, color: kText)),
           const SizedBox(height: 6),
-          LinearProgressIndicator(value: percent! / 100, color: kBrand),
+          const LinearProgressIndicator(color: kBrand),
         ],
       );
     }
@@ -550,7 +550,7 @@ class _ItemTile extends StatelessWidget {
             Text(_status, style: const TextStyle(fontSize: 11, color: kDim)),
             if (running) ...[
               const SizedBox(height: 8),
-              LinearProgressIndicator(value: item.progress / 100, color: kBrand),
+              LinearProgressIndicator(value: item.progress > 0 ? item.progress / 100 : null, color: kBrand),
             ],
             if (item.segments.isNotEmpty) ...[
               const SizedBox(height: 8),

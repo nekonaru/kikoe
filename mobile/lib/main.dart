@@ -159,7 +159,11 @@ class KikoeHome extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    state.stage == JobStage.decoding ? 'Decoding media…' : 'Transcribing… ${state.progress}%',
+                    state.stage == JobStage.decoding
+                        ? 'Decoding media…'
+                        : state.progress > 0
+                            ? 'Transcribing… ${state.progress}%'
+                            : 'Transcribing…',
                     style: const TextStyle(fontSize: 12, color: kDim),
                   ),
                 ],
