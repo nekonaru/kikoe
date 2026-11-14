@@ -2,6 +2,10 @@
 
 #include "whisper.h"
 
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
+
 #include <algorithm>
 #include <cstdio>
 #include <thread>
@@ -66,6 +70,14 @@ std::unique_ptr<Engine> Engine::create(const EngineOptions& options, ErrorCode& 
 
         auto engine = std::unique_ptr<Engine>(new Engine());
         engine->ctx_ = ctx;
+#ifdef __ANDROID__
+        // Route whisper.cpp diagnostics into the Android log. Whisper's own
+        // log lines contain model metadata and progress, never the user's
+        // audio or transcript.
+        whisper_log_set([](enum ggml_log_level /*level*/, const char* text, void* /*user_data*/) {
+            __android_log_print(ANDROID_LOG_INFO, "whisper", "%s", text);
+        }, nullptr);
+#endif
         if (options.n_threads > 0) {
             engine->n_threads_ = options.n_threads;
         } else {
@@ -115,6 +127,10 @@ ErrorCode Engine::transcribe_impl(const float* samples,
 {
     if (samples == nullptr || n_samples == 0) return ErrorCode::InvalidArgument;
     if (ctx_ == nullptr) return ErrorCode::EngineFailed;
+    // Refuse absurdly long inputs instead of building a multi-gigabyte PCM
+    // buffer and getting killed by the OS. 16 kHz * 4 hours * 4 bytes.
+    constexpr size_t kMaxSamples = size_t{16000} * 4 * 3600;
+    if (n_samples > kMaxSamples) return ErrorCode::AudioTooLong;
 
     cancel_.store(false, std::memory_order_relaxed);
     SegmentList collected;

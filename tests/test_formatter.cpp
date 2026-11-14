@@ -58,7 +58,7 @@ void test_vtt_structure()
 void test_json_escapes()
 {
     SegmentList s;
-    Segment a; a.start_ms = 1; a.end_ms = 2; a.text = "quote \" and \\ and newline\n";
+    Segment a; a.start_ms = 1; a.end_ms = 2; a.text = "line1\nline2 quote \" and \\";
     s.push_back(a);
     const std::string out = format_segments(s, OutputFormat::Json);
     assert(out.find("\\\"") != std::string::npos);

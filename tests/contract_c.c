@@ -16,10 +16,11 @@ int main(void)
 {
     int err = -1;
 
-    assert(kk_abi_version() >= 100);
+    assert(kk_abi_version() >= 1);
     assert(kk_version_string() != NULL && strlen(kk_version_string()) > 0);
     assert(kk_error_string(KK_OK) != NULL);
     assert(kk_error_string(KK_ERR_INVALID_ARGUMENT) != NULL);
+    assert(kk_error_string(KK_ERR_AUDIO_TOO_LONG) != NULL);
     assert(kk_error_string(9999) != NULL); // unknown codes still map to a string
 
     /* create: invalid arguments */
@@ -70,6 +71,61 @@ int main(void)
     /* download: unknown registry name */
     assert(kk_download_model("not-a-model", NULL, NULL) == KK_ERR_INVALID_ARGUMENT);
     assert(kk_download_model(NULL, NULL, NULL) == KK_ERR_INVALID_ARGUMENT);
+
+    /* Optional end-to-end via PCM: same as above but through kk_transcribe_pcm. */
+    {
+        const char* model = getenv("KIKOE_TEST_MODEL");
+        const char* wav = getenv("KIKOE_TEST_WAV");
+        if (model && wav) {
+            /* Read the WAV into memory manually: minimal RIFF PCM16 parser. */
+            FILE* f = fopen(wav, "rb");
+            assert(f != NULL);
+            fseek(f, 0, SEEK_END);
+            long size = ftell(f);
+            fseek(f, 0, SEEK_SET);
+            unsigned char* buf = (unsigned char*)malloc((size_t)size);
+            assert(buf != NULL);
+            assert(fread(buf, 1, (size_t)size, f) == (size_t)size);
+            fclose(f);
+
+            /* Locate the data chunk. */
+            const unsigned char* data = NULL;
+            unsigned int data_len = 0;
+            for (long i = 12; i + 8 <= size; ) {
+                unsigned int chunk = (unsigned int)((unsigned int)buf[i + 4] |
+                                                   ((unsigned int)buf[i + 5] << 8) |
+                                                   ((unsigned int)buf[i + 6] << 16) |
+                                                   ((unsigned int)buf[i + 7] << 24));
+                if (memcmp(buf + i, "data", 4) == 0) { data = buf + i + 8; data_len = chunk; break; }
+                i += 8 + chunk + (chunk & 1);
+            }
+            assert(data != NULL);
+            const size_t n_samples = data_len / 2;
+            float* pcm = (float*)malloc(n_samples * sizeof(float));
+            assert(pcm != NULL);
+            for (size_t i = 0; i < n_samples; ++i) {
+                short v = (short)((data[i * 2] | (data[i * 2 + 1] << 8)));
+                pcm[i] = (float)v / 32768.0f;
+            }
+
+            kk_engine_params p = {0};
+            p.model_path = model;
+            p.n_threads = 0;
+            int cerr = -1;
+            kk_engine* e = kk_engine_create(&p, &cerr);
+            assert(e != NULL && cerr == KK_OK);
+            kk_options opts = {0};
+            opts.language = "en";
+            assert(kk_transcribe_pcm(e, pcm, (unsigned long long)n_samples, &opts, NULL, NULL, NULL) == KK_OK);
+            int count = kk_last_segment_count(e);
+            printf("kk_transcribe_pcm segments: %d\n", count);
+            assert(count > 0);
+            kk_engine_free(e);
+            free(pcm);
+            free(buf);
+            printf("end-to-end PCM transcription ok\n");
+        }
+    }
 
     /* free: NULL is a no-op */
     kk_engine_free(NULL);

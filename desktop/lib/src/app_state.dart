@@ -36,8 +36,9 @@ class AppState extends ChangeNotifier {
   String? ffiError;
   bool get ffiReady => abiVersion >= 0;
 
-  // Downloads in flight, percent per model name.
-  final Map<String, int> downloads = {};
+  // Downloads currently in flight, by model name. Progress is not reported
+  // through FFI; the UI shows an indeterminate indicator while a name is present.
+  final Set<String> downloads = {};
 
   bool busy = false;
   final Set<String> _saveRequested = {}; // '$id:$format' pairs in flight
@@ -57,7 +58,7 @@ class AppState extends ChangeNotifier {
     return model.isCached(cacheDir);
   }
 
-  int? downloadPercentOf(String name) => downloads[name];
+  bool downloadingOf(String name) => downloads.contains(name);
 
   /// Kick off worker startup. Called once from the UI.
   Future<void> ensureStarted() async {
@@ -118,8 +119,8 @@ class AppState extends ChangeNotifier {
 
   void downloadSelectedModel() {
     final model = selectedModel;
-    if (model == null || downloads.containsKey(model.name)) return;
-    downloads[model.name] = 0;
+    if (model == null || downloads.contains(model.name)) return;
+    downloads.add(model.name);
     notifyListeners();
     transcriber.downloadModel(model.name);
   }
@@ -178,9 +179,6 @@ class AppState extends ChangeNotifier {
       case Ready():
         cacheDir = event.cacheDir;
         abiVersion = event.abiVersion;
-        notifyListeners();
-      case DownloadProgress():
-        downloads[event.name] = event.percent;
         notifyListeners();
       case DownloadDone():
         downloads.remove(event.name);

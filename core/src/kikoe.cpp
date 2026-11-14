@@ -79,6 +79,7 @@ const char* kk_error_string(int err)
     case KK_ERR_OUT_OF_MEMORY:     return kikoe::error_string(kikoe::ErrorCode::OutOfMemory);
     case KK_ERR_ENGINE:            return kikoe::error_string(kikoe::ErrorCode::EngineFailed);
     case KK_ERR_INVALID_ARGUMENT:  return kikoe::error_string(kikoe::ErrorCode::InvalidArgument);
+    case KK_ERR_AUDIO_TOO_LONG:    return kikoe::error_string(kikoe::ErrorCode::AudioTooLong);
     default:                       return "unknown error";
     }
 }

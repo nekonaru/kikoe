@@ -29,12 +29,6 @@ class FfiError extends TranscriberEvent {
   final String message;
 }
 
-class DownloadProgress extends TranscriberEvent {
-  const DownloadProgress(this.name, this.percent);
-  final String name;
-  final int percent;
-}
-
 class DownloadDone extends TranscriberEvent {
   const DownloadDone(this.name);
   final String name;
@@ -169,8 +163,6 @@ TranscriberEvent? _eventFromMap(Map<String, dynamic> map) {
       return Ready(map['abiVersion'] as int, map['cacheDir'] as String);
     case 'ffiError':
       return FfiError(map['message'] as String);
-    case 'downloadProgress':
-      return DownloadProgress(map['name'] as String, map['percent'] as int);
     case 'downloadDone':
       return DownloadDone(map['name'] as String);
     case 'downloadFailed':
@@ -293,13 +285,11 @@ void _workerMain(SendPort readyPort) {
           emit({'type': 'downloadFailed', 'name': name, 'message': ffiError ?? 'FFI library is not loaded'});
           break;
         }
-        final progress = NativeCallable<KkProgressCb>.listener((int percent, Pointer<Void> user) {
-          emit({'type': 'downloadProgress', 'name': name, 'percent': percent});
-        });
         final namePtr = name.toNativeUtf8();
-        final rc = lib.downloadModel(namePtr, progress.nativeFunction, nullptr);
+        // Progress is not reported through FFI callbacks; the call is
+        // synchronous and the UI shows an indeterminate state.
+        final rc = lib.downloadModel(namePtr, nullptr, nullptr);
         calloc.free(namePtr);
-        progress.close();
         if (rc == kKkOk) {
           emit({'type': 'downloadDone', 'name': name});
         } else {
@@ -323,20 +313,6 @@ void _workerMain(SendPort readyPort) {
           return;
         }
         final lib = ffi;
-        final progress = NativeCallable<KkProgressCb>.listener((int percent, Pointer<Void> user) {
-          emit({'type': 'transcribeProgress', 'id': id, 'percent': percent});
-        });
-        final segmentCb = NativeCallable<KkSegmentCb>.listener((Pointer<KkSegment> segPtr, Pointer<Void> user) {
-          if (segPtr == nullptr) return;
-          final seg = segPtr.ref;
-          emit({
-            'type': 'segment',
-            'id': id,
-            'startMs': seg.startMs,
-            'endMs': seg.endMs,
-            'text': seg.text.toDartString(),
-          });
-        });
         final mediaPath = (msg['mediaPath'] as String).toNativeUtf8();
         final language = (msg['language'] as String).toNativeUtf8();
         final promptText = msg['initialPrompt'] as String;
@@ -350,8 +326,8 @@ void _workerMain(SendPort readyPort) {
           engine,
           mediaPath,
           options,
-          progress.nativeFunction,
-          segmentCb.nativeFunction,
+          nullptr,  // progress: not through FFI callbacks; the UI is indeterminate
+          nullptr,  // segment callbacks: harvested after the call returns
           nullptr,
         );
 
@@ -359,10 +335,23 @@ void _workerMain(SendPort readyPort) {
         calloc.free(mediaPath);
         calloc.free(language);
         if (promptPtr != nullptr) calloc.free(promptPtr);
-        progress.close();
-        segmentCb.close();
 
         if (rc == kKkOk) {
+          // Harvest segments from the engine after the blocking FFI call returns.
+          final count = lib.lastSegmentCount(engine);
+          for (var i = 0; i < count; i++) {
+            final src = calloc<KkSegment>();
+            if (lib.lastSegmentGet(engine, i, src) == kKkOk) {
+              emit({
+                'type': 'segment',
+                'id': id,
+                'startMs': src.ref.startMs,
+                'endMs': src.ref.endMs,
+                'text': src.ref.text.toDartString(),
+              });
+            }
+            calloc.free(src);
+          }
           emit({'type': 'transcribeDone', 'id': id});
         } else if (rc == kKkErrCancelled) {
           emit({'type': 'transcribeFailed', 'id': id, 'message': 'cancelled', 'cancelled': true});

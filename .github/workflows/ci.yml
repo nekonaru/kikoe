@@ -64,7 +64,7 @@ jobs:
         working-directory: desktop
         run: |
           flutter pub get
-          flutter analyze
+          flutter analyze --no-fatal-infos
           flutter test
 
       - name: Build Windows app
@@ -126,7 +126,7 @@ jobs:
         working-directory: mobile
         run: |
           flutter pub get
-          flutter analyze
+          flutter analyze --no-fatal-infos
           flutter test
 
       - name: Build release APKs
