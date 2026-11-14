@@ -75,13 +75,13 @@ dan kontrak C API ada di [PRD](docs/PRD.md).
 | Tahap | Cakupan | Status |
 | --- | --- | --- |
 | 0 | Fondasi: repo, CMake, submodule, CI | Selesai |
-| 1 | CLI minimal: WAV 16 kHz, cetak teks | Selesai setelah `kikoe` mencetak transkrip |
-| 2 | Media apa pun: FFmpeg, TXT/SRT/VTT/JSON | Direncanakan |
-| 3 | Kenyamanan: progress, batal, batch, manajer model | Direncanakan |
-| 4 | C API stabil dengan header berversi | Direncanakan |
-| 5 | Aplikasi desktop (Flutter) | Direncanakan |
-| 6 | Aplikasi Android (Flutter + FFI) | Direncanakan |
-| 7 | Rilis: installer, dokumen, v1.0 | Direncanakan |
+| 1 | CLI minimal: WAV 16 kHz, cetak teks | Selesai |
+| 2 | Media apa pun: FFmpeg, TXT/SRT/VTT/JSON | Selesai |
+| 3 | Kenyamanan: progress, batal, batch, manajer model | Selesai |
+| 4 | C API stabil dengan header berversi | Selesai |
+| 5 | Aplikasi desktop (Flutter) | Selesai |
+| 6 | Aplikasi Android (Flutter + FFI) | Selesai |
+| 7 | Rilis: installer, dokumen, v1.0 | Dalam proses |
 
 ## Privasi
 
