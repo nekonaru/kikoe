@@ -13,10 +13,14 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def extract(path: Path, tag: str) -> str:
     text = path.read_text(encoding="utf-8")
-    match = re.search(rf"## \[{re.escape(tag)}\](.*?)(?=\n## |\Z)", text, re.S)
-    if not match:
-        sys.exit(f"No section '[{tag}]' found in {path}")
-    return match.group(1).strip()
+    for candidate in (tag, tag.lstrip("vV")):
+        match = re.search(rf"## \[{re.escape(candidate)}\](.*?)(?=\n## |\Z)", text, re.S)
+        if match:
+            body = match.group(1).strip()
+            # Drop the "- YYYY-MM-DD" trailing the version heading.
+            body = re.sub(r"^-\s*\d{4}-\d{2}-\d{2}\s*", "", body).strip()
+            return body
+    sys.exit(f"No section for tag '{tag}' found in {path}")
 
 
 def main() -> None:
