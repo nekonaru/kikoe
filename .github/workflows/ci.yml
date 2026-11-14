@@ -41,6 +41,27 @@ jobs:
           if (-not $bin) { throw "kikoe binary not found in build output" }
           & $bin --help
 
+      - name: Package CLI
+        shell: pwsh
+        run: |
+          $dir = "pkg/kikoe"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $candidates = @("build/kikoe", "build/Release/kikoe.exe", "build/kikoe.exe", "build/Release/kikoe")
+          $bin = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $bin) { throw "kikoe binary not found in build output" }
+          Copy-Item $bin "$dir/"
+          Copy-Item README.md "$dir/"
+          Copy-Item LICENSE "$dir/"
+          $zip = "kikoe-cli-${{ matrix.os }}.zip"
+          Compress-Archive -Path "$dir/*" -DestinationPath $zip
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kikoe-cli-${{ matrix.os }}
+          path: kikoe-cli-${{ matrix.os }}.zip
+          retention-days: 14
+
   desktop:
     name: Build desktop (windows-latest)
     runs-on: windows-latest
@@ -59,6 +80,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.0
 
       - name: Analyze and test
         working-directory: desktop
@@ -121,6 +143,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.47.0
 
       - name: Analyze and test
         working-directory: mobile
@@ -139,6 +162,49 @@ jobs:
           name: kikoe-android-apks
           path: mobile/build/app/outputs/flutter-apk/*-release.apk
           retention-days: 14
+
+  release:
+    name: Release artifacts (tags only)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, desktop, mobile]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download CLI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: kikoe-cli-*
+
+      - name: Download desktop bundle
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: kikoe-windows-x64
+
+      - name: Download Android APKs
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: kikoe-android-apks
+
+      - name: Build combined release notes
+        run: python3 scripts/build_release_notes.py "$GITHUB_REF_NAME" RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mapfile -t files < <(find artifacts -type f \( -name '*.zip' -o -name '*.apk' \))
+          printf 'Uploading: %s\n' "${files[@]}"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Kikoe $GITHUB_REF_NAME" \
+            --notes-file RELEASE_NOTES.md \
+            "${files[@]}"
 
   secret-scan:
     name: Secret scan

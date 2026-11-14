@@ -74,13 +74,13 @@ full functional spec and C API contract.
 | Stage | Scope | State |
 | --- | --- | --- |
 | 0 | Foundation: repo, CMake, submodule, CI | Done |
-| 1 | Minimal CLI: WAV 16 kHz, print text | Done when `kikoe` prints a transcript |
-| 2 | Any media: FFmpeg, TXT/SRT/VTT/JSON | Planned |
-| 3 | Comfort: progress, cancel, batch, model manager | Planned |
-| 4 | Stable C API with versioned header | Planned |
-| 5 | Desktop app (Flutter) | Planned |
-| 6 | Android app (Flutter + FFI) | Planned |
-| 7 | Release: installers, docs, v1.0 | Planned |
+| 1 | Minimal CLI: WAV 16 kHz, print text | Done |
+| 2 | Any media: FFmpeg, TXT/SRT/VTT/JSON | Done |
+| 3 | Comfort: progress, cancel, batch, model manager | Done |
+| 4 | Stable C API with versioned header | Done |
+| 5 | Desktop app (Flutter) | Done |
+| 6 | Android app (Flutter + FFI) | Done |
+| 7 | Release: installers, docs, v1.0 | In progress |
 
 ## Privacy
 
