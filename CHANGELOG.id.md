@@ -1,60 +1,37 @@
 # Changelog
 
 Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Kikoe memakai
-semantic versioning; sampai v1.0, C API publik dan flag CLI bisa berubah antar
-release.
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Belum dirilis]
+## Belum dirilis
 
-## [1.0.1] - 2026-11-15
+## v1.0.1
 
-### Keamanan
+Rilis keamanan: APK ditandatangani dengan release key, jalur unduhan yang fail-closed, manifest Android yang dikeraskan, dan string versi yang konsisten.
 
-- **APK Android sekarang ditandatangani dengan release key Kikoe**, bukan
-  debug key. CI menggagalkan build tagged bila secret tanda tangan tidak ada.
-  Verifikasi sertifikat dengan sidik jari SHA-256:
-  `06:87:03:24:C4:97:56:DE:7D:B3:B0:8D:A4:F2:31:55:44:42:12:6E:41:33:F9:23:56:EC:56:64:D5:CF:4B:9A`.
-  Aplikasi yang terpasang dari v1.0.0 harus dicopot sebelum memasang v1.0.1,
-  karena sertifikatnya berubah.
-- **Unduhan model dan pemanggilan ffmpeg tidak lagi meneruskan karakter yang
-  bisa ditafsirkan shell**; argumen diberi tanda kutip per platform dan
-  apa pun yang tidak terduga gagal dengan aman (fail closed).
-- **`android:allowBackup="false"` dan `usesCleartextTraffic="false"`**
-  ditetapkan di manifest release, jadi transkrip dan model tidak ikut ke
-  backup cloud dan cleartext traffic tidak pernah dicoba.
-- **Versi konsisten**: tag, output `--version` CLI, versi proyek CMake dan
-  versi aplikasi semuanya 1.0.1 (v1.0.0 mengirim biner yang melapor 0.1.0).
+### Peningkatan
 
-### Perbaikan
+- **Tanda tangan rilis.** APK Android sekarang ditandatangani dengan release key Kikoe, bukan debug key, dan build tagged gagal bila secret tanda tangan tidak ada. Verifikasi sidik jari sertifikat di SECURITY.md.
+- **Unduhan fail-closed.** Unduhan model dan pemanggilan ffmpeg tidak lagi meneruskan karakter yang bisa ditafsirkan shell; input yang tidak terduga menggagalkan proses alih-alih dijalankan.
+- **Manifest dikeraskan.** Backup dan cleartext traffic sekarang dinonaktifkan secara eksplisit (`allowBackup="false"`, `usesCleartextTraffic="false"`).
+- **Verifikasi unduhan.** CI memverifikasi tanda tangan setiap APK dengan `apksigner` sebelum diterbitkan.
+- **Pembaruan dependensi.** Dependabot sekarang mengusulkan pembaruan mingguan untuk GitHub Actions, dependensi Dart dan Gradle.
 
-- Konsistensi string versi di seluruh C API, CLI, sistem build dan kedua
-  aplikasi (lihat poin terakhir di Keamanan di atas).
+### Perbaikan bug
 
-## [1.0.0] - 2026-11-14
+- **Versi bergeser.** Tag, versi C API, banner `--help` CLI, versi proyek CMake dan kedua aplikasi semuanya melapor 1.0.1. Biner v1.0.0 melapor 0.1.0.
 
-### Ditambahkan
+## v1.0.0
 
-- Mesin transkrip berbasis whisper.cpp v1.9.5, lewat C API stabil berversi,
-  dipakai oleh setiap permukaan produk di bawah ini.
-- **CLI**: transkrip file audio atau video apa pun ke TXT, SRT, VTT atau JSON.
-  Mode batch, keluaran per file, filter keheningan Silero VAD, dan manajer
-  unduhan model yang diverifikasi checksum dan bisa dilanjutkan
-  (`kikoe --download-model`).
-- **Aplikasi desktop** (Windows, macOS, Linux): antrean seret-lepas, pratinjau
-  langsung, ekspor TXT/SRT/VTT/JSON per file, manajemen model dengan verifikasi
-  checksum.
-- **Aplikasi Android**: core yang sama lewat Dart FFI; transkrip di perangkat
-  dengan decoding MediaCodec (tanpa FFmpeg), bagikan ke Kikoe, notifikasi
-  progres berjalan.
-- **Bundle desktop** (`kikoe-windows-x64`): `Kikoe.exe` plus `kikoe_ffi.dll`.
-- **APK Android** (`kikoe-android-apks`), per ABI.
-- CI membangun semua artifact di Windows, macOS dan Linux.
-- Kebijakan keamanan, pemberitahuan pihak ketiga, README dan changelog dwibahasa.
+Rilis publik pertama: transkripsi audio dan video offline ke teks dan subtitle di Android, desktop Windows dan baris perintah.
 
-### Keamanan
+### Fitur baru
 
-- Semua build yang diterbitkan menjaga audio di perangkat. Satu-satunya
-  permintaan jaringan adalah unduhan model yang diminta pengguna, diverifikasi
-  dengan SHA-256.
-
+- **Mesin transkrip.** whisper.cpp v1.9.5 lewat C API stabil berversi, dipakai oleh setiap permukaan.
+- **CLI.** Transkripsikan file audio atau video apa pun ke TXT, SRT, VTT atau JSON. Mode batch, keluaran per file, filter keheningan Silero VAD, dan unduhan model terverifikasi dan bisa dilanjutkan (`kikoe --download-model`).
+- **Aplikasi desktop Windows.** Antrean seret-lepas, ekspor TXT/SRT/VTT/JSON per file, folder keluaran kustom, manajemen model dengan verifikasi checksum.
+- **Aplikasi Android.** Core yang sama lewat Dart FFI; transkripsi di perangkat dengan decoding MediaCodec (tanpa FFmpeg), bagikan ke Kikoe, notifikasi berjalan dengan progres.
+- **Bundle desktop Windows.** `kikoe-windows-x64.zip`: `Kikoe.exe` plus `kikoe_ffi.dll`.
+- **APK Android.** Split per ABI; zip CLI untuk Windows, macOS dan Linux.
+- **Rilis dibangun CI.** Setiap artefak dibangun oleh CI dari commit tag; repo dipindai untuk mencari rahasia sebelum setiap push.
+- **Kebijakan keamanan dan pemberitahuan.** SECURITY.md, pemberitahuan pihak ketiga, README dan changelog dwibahasa.
