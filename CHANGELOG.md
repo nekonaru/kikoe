@@ -7,6 +7,29 @@ releases.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-15
+
+### Security
+
+- **Android APKs are now signed with the Kikoe release key**, not the debug
+  key. CI fails a tagged build when the signing secrets are missing. Verify
+  the certificate SHA-256 fingerprint: `06:87:03:24:C4:97:56:DE:7D:B3:B0:8D:A4:F2:31:55:44:42:12:6E:41:33:F9:23:56:EC:56:64:D5:CF:4B:9A`.
+  Apps installed from v1.0.0 must be uninstalled before installing v1.0.1,
+  because the certificate changed.
+- **Model downloads and the ffmpeg invocation no longer pass
+  shell-interpretable characters** to the shell; arguments are quoted
+  per-platform and anything unexpected fails closed.
+- **`android:allowBackup="false"` and `usesCleartextTraffic="false"`** are set
+  in the release manifest, so transcripts and models stay out of cloud backups
+  and no cleartext traffic is ever attempted.
+- **Versions are consistent**: the tag, CLI `--version` output, CMake project
+  version and app versions all say 1.0.1 (v1.0.0 shipped binaries reporting 0.1.0).
+
+### Fixed
+
+- Version-string consistency across the C API, CLI, build system and both
+  apps (see the last line of Security above).
+
 ## [1.0.0] - 2026-11-14
 
 ### Added

@@ -7,6 +7,30 @@ release.
 
 ## [Belum dirilis]
 
+## [1.0.1] - 2026-11-15
+
+### Keamanan
+
+- **APK Android sekarang ditandatangani dengan release key Kikoe**, bukan
+  debug key. CI menggagalkan build tagged bila secret tanda tangan tidak ada.
+  Verifikasi sertifikat dengan sidik jari SHA-256:
+  `06:87:03:24:C4:97:56:DE:7D:B3:B0:8D:A4:F2:31:55:44:42:12:6E:41:33:F9:23:56:EC:56:64:D5:CF:4B:9A`.
+  Aplikasi yang terpasang dari v1.0.0 harus dicopot sebelum memasang v1.0.1,
+  karena sertifikatnya berubah.
+- **Unduhan model dan pemanggilan ffmpeg tidak lagi meneruskan karakter yang
+  bisa ditafsirkan shell**; argumen diberi tanda kutip per platform dan
+  apa pun yang tidak terduga gagal dengan aman (fail closed).
+- **`android:allowBackup="false"` dan `usesCleartextTraffic="false"`**
+  ditetapkan di manifest release, jadi transkrip dan model tidak ikut ke
+  backup cloud dan cleartext traffic tidak pernah dicoba.
+- **Versi konsisten**: tag, output `--version` CLI, versi proyek CMake dan
+  versi aplikasi semuanya 1.0.1 (v1.0.0 mengirim biner yang melapor 0.1.0).
+
+### Perbaikan
+
+- Konsistensi string versi di seluruh C API, CLI, sistem build dan kedua
+  aplikasi (lihat poin terakhir di Keamanan di atas).
+
 ## [1.0.0] - 2026-11-14
 
 ### Ditambahkan

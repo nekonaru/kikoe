@@ -29,11 +29,30 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            // Release keystore path and credentials come from the environment,
+            // never from the repo. When they are absent (local dev, PRs from
+            // forks), the release build falls back to the debug key.
+            val keystoreFile = System.getenv("KIKOE_KEYSTORE_FILE")
+            if (!keystoreFile.isNullOrEmpty()) {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("KIKOE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KIKOE_KEY_ALIAS")
+                keyPassword = System.getenv("KIKOE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            val keystoreFile = System.getenv("KIKOE_KEYSTORE_FILE")
+            signingConfig = if (!keystoreFile.isNullOrEmpty()) {
+                signingConfigs.getByName("release")
+            } else {
+                // Debug key only when no release keystore is configured.
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

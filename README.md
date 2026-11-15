@@ -86,7 +86,8 @@ full functional spec and C API contract.
 
 Kikoe makes no network requests except model downloads that you explicitly ask
 for. There is no telemetry, no analytics, no crash reporting, no account. See
-[SECURITY.md](SECURITY.md) for how to report a vulnerability.
+[SECURITY.md](SECURITY.md) for how to report a vulnerability and how to verify
+downloaded APKs.
 
 ## Third-party components
 

@@ -20,6 +20,17 @@ Please include: what you found, how to reproduce it, and the impact. You will
 get an acknowledgement within 7 days. If the report is accepted, a fix and a
 security release will follow as soon as practical.
 
+## Verifying downloads
+
+Android APKs published on GitHub Releases are signed with the Kikoe release
+key. Verify the certificate SHA-256 fingerprint before installing:
+
+`06:87:03:24:C4:97:56:DE:7D:B3:B0:8D:A4:F2:31:55:44:42:12:6E:41:33:F9:23:56:EC:56:64:D5:CF:4B:9A`
+
+The Windows desktop bundle and the CLI binaries are not code-signed; Windows
+SmartScreen will warn on first run. The release zip ships the MIT license and
+the README, and every artifact is built by CI from the tagged commit.
+
 ## Scope notes
 
 - Kikoe makes no network requests except model downloads explicitly started by
