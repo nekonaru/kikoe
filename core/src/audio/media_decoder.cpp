@@ -157,6 +157,9 @@ ErrorCode decode_media(const std::string& path, PcmAudio& out, const std::string
     for (char c : path) {
         if (c == '"') return ErrorCode::InvalidArgument; // keep command lines predictable
     }
+    for (char c : ffmpeg_path) {
+        if (c == '"') return ErrorCode::InvalidArgument;
+    }
 #ifdef _WIN32
     return decode_media_win(path, out, ffmpeg_path);
 #else

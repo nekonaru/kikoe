@@ -66,6 +66,37 @@ std::string curl_binary()
 #endif
 }
 
+// Wrap one argument for the shell used by popen/_popen: single-quoted (POSIX)
+// or double-quoted (Windows cmd.exe), refusing characters that can break out
+// of the quoting context. Fails closed: an impossible argument means the
+// download aborts instead of running a mangled command line.
+std::string shell_arg(const std::string& s, bool* ok)
+{
+    if (s.empty()) {
+        *ok = false;
+        return {};
+    }
+    for (const unsigned char c : s) {
+        if (c < 0x20 || c == 0x7F) { *ok = false; return {}; } // control chars
+    }
+#ifdef _WIN32
+    // Inside cmd.exe double quotes, `%` still expands and `"` ends the quoted
+    // context; `!` only with delayed expansion. Refuse all three.
+    for (const char c : s) {
+        if (c == '"' || c == '%' || c == '!') { *ok = false; return {}; }
+    }
+    return "\"" + s + "\"";
+#else
+    std::string out = "'";
+    for (const char c : s) {
+        if (c == '\'') out += "'\\''";
+        else out += c;
+    }
+    out += "'";
+    return out;
+#endif
+}
+
 } // namespace
 
 std::string model_cache_dir()
@@ -130,10 +161,13 @@ ErrorCode download_model(const ModelEntry& entry,
         }
     }
 
-    // -C - resumes. --fail makes HTTP errors exit non-zero. --retry 3 rides
-    // out transient network failures. Quote everything we hand to the shell.
+    // Build the command line with arguments the shell cannot reinterpret.
+    bool ok = true;
+    const std::string out_arg = shell_arg(part_path, &ok);
+    const std::string url_arg = shell_arg(entry.url, &ok);
+    if (!ok) return ErrorCode::InvalidArgument;
     std::string cmd = curl_binary() +
-        " -fL --retry 3 -C - --progress-bar -o \"" + part_path + "\" \"" + entry.url + "\"";
+        " -fL --retry 3 -C - --progress-bar -o " + out_arg + " " + url_arg;
 
     FILE* pipe = KIKOE_POPEN(cmd.c_str(), "r");
     if (pipe == nullptr) return ErrorCode::DecoderNotFound; // reuse: external tool missing

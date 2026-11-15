@@ -87,7 +87,7 @@ dan kontrak C API ada di [PRD](docs/PRD.md).
 
 Kikoe tidak melakukan permintaan jaringan apa pun kecuali unduhan model yang
 kamu minta sendiri. Tidak ada telemetri, analitik, laporan crash, atau akun.
-Cara melaporkan kerentanan ada di [SECURITY.md](SECURITY.md).
+Cara melaporkan kerentanan dan verifikasi APK ada di [SECURITY.md](SECURITY.md).
 
 ## Komponen pihak ketiga
 
