@@ -35,6 +35,15 @@ class AppState extends ChangeNotifier {
   // Input.
   String? inputPath;
 
+  // Default save target: Downloads/kikoe on the device.
+  String savedLocation = '';
+  String? saveError;
+
+  // First-launch storage permission state: notNeeded (API 29+), granted, or denied.
+  // 0 = not needed, 1 = granted, 2 = needs requesting, 3 = asked, waiting for result.
+  int legacyStorageState = -1;
+  bool storageNoticeShown = false;
+
   // Job state.
   JobStage stage = JobStage.idle;
   int progress = 0;
@@ -86,16 +95,44 @@ class AppState extends ChangeNotifier {
     try {
       await NotificationService.instance.init();
     } catch (e) {
-      debugPrint('notifications unavailable: $e');
+      if (kDebugMode) debugPrint('notifications unavailable: $e');
     }
     try {
+      const channel = MethodChannel('kikoe/files');
+      legacyStorageState = await channel.invokeMethod<int>('legacyStoragePermissionState') ?? 0;
+      // Detect first launch with a marker file so the notice shows once.
       final docs = await getApplicationDocumentsDirectory();
+      storageNoticeShown = File(p.join(docs.path, '.kikoe_storage_notice_shown')).existsSync();
       final dir = Directory(p.join(docs.path, 'kikoe_models'));
       await dir.create(recursive: true);
       modelsDir = dir.path;
       await transcriber.start();
     } catch (e) {
       debugPrint('worker start failed: $e');
+    }
+    notifyListeners();
+  }
+
+  /// Marks the storage notice as shown (first-launch flag).
+  Future<void> markStorageNoticeShown() async {
+    try {
+      final docs = await getApplicationDocumentsDirectory();
+      await File(p.join(docs.path, '.kikoe_storage_notice_shown')).writeAsString('1');
+    } catch (_) {
+      // Best-effort; the notice may show again next launch.
+    }
+    storageNoticeShown = true;
+    notifyListeners();
+  }
+
+  /// Request WRITE_EXTERNAL_STORAGE on Android 9 and below.
+  Future<void> requestLegacyStoragePermission() async {
+    try {
+      const channel = MethodChannel('kikoe/files');
+      await channel.invokeMethod<int>('requestLegacyStoragePermission');
+      legacyStorageState = 3;
+    } catch (_) {
+      // Non-fatal; saves via MediaStore on Android 10+ anyway.
     }
     notifyListeners();
   }
@@ -230,16 +267,24 @@ class AppState extends ChangeNotifier {
     return out;
   }
 
-  /// Ask the worker to render the last transcription as [format]. The result
-  /// arrives as a FormatResult event; [onReady] is called with the file path
-  /// once the content is written.
-  void exportTranscription(String format, void Function(String path) onReady) {
+  /// Ask the worker to render the last transcription as [format], then save
+  /// it into Downloads/kikoe. The result arrives as a FormatResult event.
+  /// [onReady] is called with the saved location once the file is written.
+  void saveTranscription(String format, void Function(String location) onReady) {
     if (segments.isEmpty) return;
     transcriber.formatLast('export', format);
-    _pendingExport = (path, _) => onReady(path);
+    _pendingSave = (location, _) => onReady(location);
   }
 
-  void Function(String path, String content)? _pendingExport;
+  /// Share the last transcription via the system share sheet.
+  void shareTranscription(String format, void Function(String path) onReady) {
+    if (segments.isEmpty) return;
+    transcriber.formatLast('export', format);
+    _pendingShare = (path, _) => onReady(path);
+  }
+
+  void Function(String, String)? _pendingSave;
+  void Function(String, String)? _pendingShare;
 
   void _onEvent(TranscriberEvent event) {
     switch (event) {
@@ -265,16 +310,39 @@ class AppState extends ChangeNotifier {
         NotificationService.instance.cancel();
         notifyListeners();
       case FormatResult():
-        final pending = _pendingExport;
-        _pendingExport = null;
-        if (pending != null && event.content.isNotEmpty) {
-          unawaited(_writeExport(event.content, event.format, pending));
+        final save = _pendingSave;
+        final share = _pendingShare;
+        _pendingSave = null;
+        _pendingShare = null;
+        if (event.content.isEmpty) return;
+        if (save != null) {
+          unawaited(_saveExport(event.content, event.format, save));
+        } else if (share != null) {
+          unawaited(_writeShareFile(event.content, event.format, share));
         }
         break;
     }
   }
 
-  Future<void> _writeExport(String content, String format, void Function(String, String) cb) async {
+  Future<void> _saveExport(String content, String format, void Function(String, String) cb) async {
+    final name = (inputPath != null) ? p.basenameWithoutExtension(inputPath!) : 'kikoe';
+    final fileName = '${name}_kikoe.$format';
+    try {
+      const channel = MethodChannel('kikoe/files');
+      final location = await channel.invokeMethod<String>('saveToDownloads', {
+        'name': fileName,
+        'content': content,
+      });
+      savedLocation = location ?? 'Downloads/kikoe/$fileName';
+      notifyListeners();
+      cb(savedLocation, content);
+    } catch (e) {
+      saveError = '$e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> _writeShareFile(String content, String format, void Function(String, String) cb) async {
     final name = (inputPath != null) ? p.basenameWithoutExtension(inputPath!) : 'kikoe';
     final dir = await getTemporaryDirectory();
     final file = File(p.join(dir.path, '${name}_kikoe.$format'));

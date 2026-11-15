@@ -69,7 +69,7 @@ aplikasi Android. Tanpa akun, tanpa kuota, tanpa cloud. Lihat
 |-------|-----------|
 | **Antrean seret-lepas** | Antrekan banyak file sekaligus, masing-masing dengan keluarannya sendiri |
 | **Ekspor per file** | Ekspor TXT, SRT, VTT atau JSON per file |
-| **Folder keluaran kustom** | Biarkan transkrip di sebelah sumbernya, atau kirim semuanya ke satu folder |
+| **Downloads/kikoe default** | Transkrip disimpan ke Downloads/kikoe secara default; pilih folder lain kapan pun, Reset kembali ke default |
 | **Manajemen model** | Unduh dan verifikasi model di dalam aplikasi |
 
 ### CLI
@@ -227,8 +227,8 @@ flutter build apk --release --split-per-abi
 - `kikoe *.mp3 --outdir transcripts/` untuk batch
 - `kikoe --vad input.mp4` untuk melewati keheningan
 - `kikoe --lang auto input.mp4` untuk deteksi bahasa otomatis
-- Desktop: ekspor TXT/SRT/VTT/JSON per file dari antrean
-- Android: bagikan video dari galeri ke Kikoe
+- Desktop: simpan TXT/SRT/VTT/JSON per file; transkrip tersimpan di Downloads/kikoe secara default (ubah di sidebar)
+- Android: file tersimpan ke Downloads/kikoe; bagikan video dari galeri ke Kikoe
 
 ---
 
@@ -310,16 +310,16 @@ CI menjalankan pemeriksaan yang sama di Windows, macOS dan Linux pada setiap pus
 ## Keamanan
 
 Kikoe adalah aplikasi sepenuhnya offline tanpa backend, tanpa akun dan tanpa
-pembelian. Satu-satunya permintaan jaringan adalah unduhan model eksplisit
-dari hub model whisper.cpp publik, diverifikasi dengan SHA-256 setiap
-unduhan. APK release ditandatangani dengan release key Kikoe dan sidik jari
-sertifikatnya diterbitkan di [SECURITY.md](SECURITY.md). Release dibangun
-dari commit yang ditag dan repositori dipindai untuk mencari rahasia sebelum
-setiap push. Manifest release Android menonaktifkan backup dan cleartext
-traffic.
+pembelian. Satu-satunya permintaan jaringan adalah yang kamu mulai sendiri:
+unduhan model dari hub model whisper.cpp publik (diverifikasi dengan SHA-256
+setiap unduhan) dan pemeriksaan pembaruan di About. APK release ditandatangani
+dengan release key Kikoe dan sidik jari sertifikatnya diterbitkan di
+[SECURITY.md](SECURITY.md). Release dibangun dari commit yang ditag dan
+repositori dipindai untuk mencari rahasia sebelum setiap push. Manifest
+release Android menonaktifkan backup dan cleartext traffic.
 
 > [!NOTE]
-> Lihat [SECURITY.md](SECURITY.md) untuk kebijakan keamanan lengkap dan cara melaporkan kerentanan secara privat.
+> Lihat [SECURITY.md](SECURITY.md) untuk kebijakan keamanan lengkap dan cara melaporkan kerentanan secara privat, dan [PRIVACY.md](PRIVACY.md) untuk kebijakan privasi.
 
 ---
 
@@ -378,6 +378,20 @@ Pasang FFmpeg 6 atau lebih baru dan pastikan `ffmpeg` ada di PATH untuk CLI. Apl
 <summary><b>Di mana model disimpan dan berapa ukurannya?</b></summary>
 
 Di cache lokal (`%LOCALAPPDATA%\kikoe\models` di Windows, `~/.cache/kikoe/models` di Linux, `~/Library/Caches/kikoe/models` di macOS). Kira-kira 75 MB untuk `tiny` sampai sekitar 3.1 GB untuk `large-v3`. Tidak ada yang dibundel dengan aplikasi.
+
+</details>
+
+<details>
+<summary><b>Di mana transkrip saya disimpan?</b></summary>
+
+Ke folder Downloads/kikoe di perangkatmu, secara default. Aplikasi desktop bisa menulis ke folder mana pun (Choose… di sidebar); tekan Reset untuk kembali ke default. Kikoe tidak pernah mengunggah transkrip.
+
+</details>
+
+<details>
+<summary><b>Bagaimana cara mendukung Kikoe?</b></summary>
+
+Beri bintang di GitHub, atau sponsor lewat GitHub Sponsors, Saweria, SociaBuzz atau BagiBagi. Tautannya ada di About (ikon info) di kedua aplikasi: About > Sponsor Kikoe.
 
 </details>
 

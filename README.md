@@ -69,7 +69,7 @@ full product spec.
 |---------|-------------|
 | **Drag & drop queue** | Queue many files at once, each with its own output |
 | **Per-file export** | TXT, SRT, VTT or JSON export per file |
-| **Custom output folder** | Keep transcripts next to the source, or send them all to one folder |
+| **Downloads/kikoe default** | Transcripts are saved into Downloads/kikoe out of the box; pick any folder, Reset returns to the default |
 | **Model management** | Download and verify models in-app |
 
 ### CLI
@@ -227,8 +227,8 @@ flutter build apk --release --split-per-abi
 - `kikoe *.mp3 --outdir transcripts/` for a batch
 - `kikoe --vad input.mp4` to skip silence
 - `kikoe --lang auto input.mp4` to auto-detect the language
-- Desktop: export TXT/SRT/VTT/JSON per file from the queue
-- Android: share a video from your gallery app into Kikoe
+- Desktop: save TXT/SRT/VTT/JSON per file; transcripts land in Downloads/kikoe by default (change in the sidebar)
+- Android: files save into Downloads/kikoe; share a video from your gallery app into Kikoe
 
 ---
 
@@ -310,15 +310,16 @@ CI runs the same checks on Windows, macOS and Linux on every push and pull reque
 ## Security
 
 Kikoe is a fully offline app with no backend, no accounts and no purchases.
-The only network requests are explicit model downloads from the public
-whisper.cpp model hub, verified by SHA-256 after every download. Release APKs
-are signed with the Kikoe release key and the certificate fingerprint is
-published in [SECURITY.md](SECURITY.md). Releases are built from tagged
-commits and the repository is scanned for secrets before every push. The
-Android release manifest disables backups and cleartext traffic.
+The only network requests are the ones you start yourself: model downloads
+from the public whisper.cpp model hub (verified by SHA-256 after every
+download) and the update check in About. Release APKs are signed with the
+Kikoe release key and the certificate fingerprint is published in
+[SECURITY.md](SECURITY.md). Releases are built from tagged commits and the
+repository is scanned for secrets before every push. The Android release
+manifest disables backups and cleartext traffic.
 
 > [!NOTE]
-> See [SECURITY.md](SECURITY.md) for the full security policy and the private reporting route for vulnerabilities.
+> See [SECURITY.md](SECURITY.md) for the full security policy and the private reporting route for vulnerabilities, and [PRIVACY.md](PRIVACY.md) for the privacy policy.
 
 ---
 
@@ -377,6 +378,20 @@ Install FFmpeg 6 or newer and make sure `ffmpeg` is on your PATH for the CLI. Th
 <summary><b>Where are models stored and how big are they?</b></summary>
 
 In the local cache (`%LOCALAPPDATA%\kikoe\models` on Windows, `~/.cache/kikoe/models` on Linux, `~/Library/Caches/kikoe/models` on macOS). Roughly 75 MB for `tiny` and up to about 3.1 GB for `large-v3`. Nothing is bundled with the app.
+
+</details>
+
+<details>
+<summary><b>Where are my transcripts saved?</b></summary>
+
+Into the Downloads/kikoe folder on your device, by default. The desktop app can write anywhere you pick (Choose… in the sidebar); press Reset to go back to the default. Kikoe never uploads transcripts.
+
+</details>
+
+<details>
+<summary><b>How do I support Kikoe?</b></summary>
+
+Star it on GitHub, or sponsor via GitHub Sponsors, Saweria, SociaBuzz or BagiBagi. Links live in About (the info icon) in both apps: About > Sponsor Kikoe.
 
 </details>
 

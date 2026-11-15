@@ -4,16 +4,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import 'src/about_screen.dart';
 import 'src/app_state.dart';
+import 'src/faq_screen.dart';
+import 'src/kikoe_theme.dart';
 import 'src/model_menu.dart';
 import 'src/queue_item.dart';
-
-const kBrand = Color(0xFFE8492D);
-const kBg = Color(0xFF141414);
-const kSurface = Color(0xFF1F1F1F);
-const kSurface2 = Color(0xFF2A2A2A);
-const kText = Color(0xFFF4F1EC);
-const kDim = Color(0xFF9B988F);
 
 void main() {
   runApp(const KikoeApp());
@@ -166,6 +162,20 @@ class _Header extends StatelessWidget {
               message: state.ffiError ?? 'The kikoe_ffi library did not load. Transcription is unavailable.',
               child: const Icon(Icons.warning_amber_rounded, color: kBrand),
             ),
+          IconButton(
+            tooltip: 'FAQ',
+            icon: const Icon(Icons.help_outline, color: kText),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FaqScreen()),
+            ),
+          ),
+          IconButton(
+            tooltip: 'About',
+            icon: const Icon(Icons.info_outline, color: kText),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AboutScreen()),
+            ),
+          ),
         ],
       ),
     );
@@ -254,7 +264,8 @@ class _ControlPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  s.customOutDir ?? 'Next to source files',
+                  s.customOutDir ?? '${s.defaultOutDir} (default)',
+                  maxLines: 2,
                   style: const TextStyle(fontSize: 11, color: kDim),
                   overflow: TextOverflow.ellipsis,
                 ),

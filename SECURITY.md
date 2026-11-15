@@ -33,8 +33,8 @@ the README, and every artifact is built by CI from the tagged commit.
 
 ## Scope notes
 
-- Kikoe makes no network requests except model downloads explicitly started by
-  the user. Any unexpected network traffic is a security bug.
+- Kikoe makes no network requests except ones you start yourself: model downloads and the optional update check in About. Any other network traffic is a security bug.
 - Kikoe never collects telemetry. Any data leaving the device without an
   explicit user action is a security bug.
+- See [PRIVACY.md](PRIVACY.md) for the full privacy policy.
 - Media decoders (FFmpeg) are a large attack surface. Keep FFmpeg updated.

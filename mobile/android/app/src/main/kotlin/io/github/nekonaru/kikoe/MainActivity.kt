@@ -12,6 +12,9 @@ import java.nio.ByteOrder
 
 class MainActivity : FlutterActivity() {
     private val channelName = "kikoe/decode"
+    private val filesChannelName = "kikoe/files"
+    private val decodeExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -23,19 +26,121 @@ class MainActivity : FlutterActivity() {
                         result.error("invalid_argument", "missing media path", null)
                         return@setMethodCallHandler
                     }
-                    try {
-                        result.success(decodeToFloat32Mono16k(path))
-                    } catch (e: Exception) {
-                        result.error("decode_failed", e.message ?: "failed to decode media", null)
+                    // Decode off the main thread so a long media file cannot
+                    // stall the UI or trip the ANR watchdog.
+                    decodeExecutor.execute {
+                        try {
+                            val pcm = decodeToFloat32Mono16k(path)
+                            handler.post { result.success(pcm) }
+                        } catch (e: Exception) {
+                            handler.post {
+                                result.error("decode_failed", e.message ?: "failed to decode media", null)
+                            }
+                        }
                     }
                 } else {
                     result.notImplemented()
                 }
             }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, filesChannelName)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "saveToDownloads" -> {
+                        val name = call.argument<String>("name")
+                        val content = call.argument<String>("content")
+                        if (name.isNullOrEmpty() || content == null) {
+                            result.error("invalid_argument", "missing name or content", null)
+                            return@setMethodCallHandler
+                        }
+                        try {
+                            result.success(saveToDownloads(name, content))
+                        } catch (e: Exception) {
+                            result.error("save_failed", e.message ?: "could not save file", null)
+                        }
+                    }
+                    "legacyStoragePermissionState" -> {
+                        // 0 = not needed (API 29+), 1 = granted, 2 = denied.
+                        if (android.os.Build.VERSION.SDK_INT >= 29) {
+                            result.success(0)
+                        } else if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                            result.success(1)
+                        } else {
+                            result.success(2)
+                        }
+                    }
+                    "requestLegacyStoragePermission" -> {
+                        if (android.os.Build.VERSION.SDK_INT < 29) {
+                            requestPermissions(
+                                arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                                LEGACY_STORAGE_PERMISSION_CODE
+                            )
+                        }
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+    }
+
+    override fun onDestroy() {
+        decodeExecutor.shutdownNow()
+        super.onDestroy()
+    }
+
+    companion object {
+        private const val LEGACY_STORAGE_PERMISSION_CODE = 4321
+    }
+
+    // Saves a transcript into Downloads/kikoe. On Android 10+ this goes
+    // through the MediaStore so no storage permission is needed. On Android
+    // 9 and below it writes directly and needs WRITE_EXTERNAL_STORAGE.
+    // Returns a user-readable location string.
+    private fun saveToDownloads(name: String, content: String): String {
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            val values = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.DISPLAY_NAME, name)
+                put(android.provider.MediaStore.Downloads.RELATIVE_PATH, "Download/kikoe")
+                put(android.provider.MediaStore.Downloads.MIME_TYPE, mimeFor(name))
+                put(android.provider.MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val collection = android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            val uri = contentResolver.insert(collection, values)
+                ?: throw IllegalStateException("MediaStore did not accept the file")
+            try {
+                contentResolver.openOutputStream(uri)?.use { stream ->
+                    stream.write(content.toByteArray(Charsets.UTF_8))
+                } ?: throw IllegalStateException("could not open output stream")
+            } catch (e: Exception) {
+                contentResolver.delete(uri, null, null)
+                throw e
+            }
+            val done = android.content.ContentValues().apply {
+                put(android.provider.MediaStore.Downloads.IS_PENDING, 0)
+            }
+            contentResolver.update(uri, done, null, null)
+            return "Downloads/kikoe/$name"
+        }
+
+        @Suppress("DEPRECATION")
+        val dir = java.io.File(
+            android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS),
+            "kikoe"
+        )
+        dir.mkdirs()
+        val file = java.io.File(dir, name)
+        file.writeText(content, Charsets.UTF_8)
+        return file.absolutePath
+    }
+
+    private fun mimeFor(name: String): String = when {
+        name.endsWith(".srt", ignoreCase = true) -> "application/x-subrip"
+        name.endsWith(".vtt", ignoreCase = true) -> "text/vtt"
+        name.endsWith(".txt", ignoreCase = true) -> "text/plain"
+        name.endsWith(".json", ignoreCase = true) -> "application/json"
+        else -> "text/plain"
     }
 
     // Decodes any media the platform supports to mono 16 kHz float32 PCM,
-    // Decode any media the platform supports to mono 16 kHz float32 PCM,
     // interleaved as little-endian bytes. Accepts plain file paths and
     // content:// or file:// URIs (both produced by SAF pickers and share
     // intents).

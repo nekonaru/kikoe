@@ -14,6 +14,9 @@ dependencies:
   path: ^1.9.1
   desktop_drop: ^0.7.0
   ffi: ^2.1.4
+  http: ^1.4.0                   # BSD-3, version display and update check
+  url_launcher: ^6.3.3           # BSD-3, opens external links (GitHub, sponsors)
+  package_info_plus: ^9.0.1      # BSD-3
 
 dev_dependencies:
   flutter_test:

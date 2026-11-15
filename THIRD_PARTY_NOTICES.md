@@ -31,6 +31,8 @@ source directories.
 
 ## Flutter and Dart packages
 
-The desktop and Android apps (planned) use Flutter (BSD-style license) and a
-small set of Dart packages, each listed with its license in the app's
-`pubspec.yaml`. The current CLI does not use any Dart code.
+The desktop (Windows) and Android apps use Flutter (BSD-style license) and a
+small set of Dart and plugin packages, each under a permissive open source
+license (MIT or BSD-3-Clause), with `flutter_lints` as the development-time
+analyzer. The apps do not use any proprietary or copyleft Dart packages. The
+CLI does not use any Dart code.
