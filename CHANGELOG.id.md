@@ -5,6 +5,23 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+### Fitur baru
+
+- **Layar About.** Identitas penulis, tautan profil GitHub, dan pemeriksaan pembaruan sekali ketuk terhadap rilis GitHub terbaru.
+- **Layar Sponsor.** GitHub Sponsors, Saweria, SociaBuzz dan BagiBagi, satu ketukan masing-masing, dibuka di browser.
+- **FAQ lengkap di dalam aplikasi.** 18 jawaban meliputi penyimpanan, model, format, akurasi, izin, pembaruan, lisensi dan dukungan.
+- **Layar kebijakan privasi dan PRIVACY.md.** Kebijakannya ada di aplikasi dan di repositori.
+- **Layar lisensi open source.** Teks MIT untuk Kikoe dan whisper.cpp, plus kredit untuk ggml, Flutter, FFmpeg dan bobot model Whisper.
+
+### Peningkatan
+
+- **Downloads/kikoe secara default.** Transkrip sekarang tersimpan ke Downloads/kikoe di Android dan desktop, bukan di sebelah file sumber. Desktop tetap punya opsi folder kustom; Reset kembali ke default.
+- **Pemberitahuan penyimpanan pertama kali di Android.** Di Android 9 dan di bawahnya aplikasi meminta izin penyimpanan lama sekali saja; di Android 10+ penyimpanan memakai MediaStore dan tidak ada izin yang diminta.
+- **UI dan UX diperbarui.** App bar baru dengan aksi FAQ dan About, kartu pemilih yang lebih kaya, section card yang konsisten, dan hub About (versi, sponsor, privasi, lisensi) di balik ikon info.
+- **Decode Android lebih mulus.** Decoding media berjalan di thread latar, bukan thread UI, sehingga aplikasi tetap responsif untuk file panjang.
+- **Aksi simpan di mobile.** Transkrip tersimpan langsung ke Downloads/kikoe; share tersedia sebagai aksi sekunder.
+- **Log lebih senyap di release.** Logging debug hanya aktif di build debug.
+
 ## v1.0.1
 
 Rilis keamanan: APK ditandatangani dengan release key, jalur unduhan yang fail-closed, manifest Android yang dikeraskan, dan string versi yang konsisten.

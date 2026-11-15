@@ -3,6 +3,9 @@
          works fully offline. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Only for saving transcripts into Downloads/kikoe on Android 9 and below.
+         On Android 10+ the MediaStore API is used and no permission is needed. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
     <application
         android:label="Kikoe"
         android:name="${applicationName}"

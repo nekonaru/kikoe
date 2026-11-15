@@ -28,7 +28,18 @@ class AppState extends ChangeNotifier {
   int nThreads = 0; // 0 = auto
   bool useGpu = false;
   String saveFormat = 'srt';
-  String? customOutDir; // null = next to source file
+
+  /// null = default (Downloads/kikoe on Windows, ~/Downloads/kikoe elsewhere).
+  String? customOutDir;
+
+  /// The effective default output directory: Downloads/kikoe on this device.
+  String get defaultOutDir {
+    final home = Platform.environment['USERPROFILE'] ?? Platform.environment['HOME'] ?? '.';
+    return p.join(home, 'Downloads', 'kikoe');
+  }
+
+  /// The directory transcripts are currently written to.
+  String get effectiveOutDir => customOutDir ?? defaultOutDir;
 
   // Runtime info from the worker.
   String cacheDir = '';
@@ -62,6 +73,11 @@ class AppState extends ChangeNotifier {
 
   /// Kick off worker startup. Called once from the UI.
   Future<void> ensureStarted() async {
+    try {
+      await Directory(defaultOutDir).create(recursive: true);
+    } catch (_) {
+      // If Downloads is not writable, the first save will surface the error.
+    }
     try {
       await transcriber.start();
     } catch (e) {
@@ -248,8 +264,7 @@ class AppState extends ChangeNotifier {
     final name = item.name;
     final dot = name.lastIndexOf('.');
     final stem = dot <= 0 ? name : name.substring(0, dot);
-    final dir = customOutDir ?? p.dirname(item.path);
-    return p.join(dir, '$stem.$format');
+    return p.join(effectiveOutDir, '$stem.$format');
   }
 
   @override

@@ -5,6 +5,23 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+### New features
+
+- **About screen.** Author identity, GitHub profile link, and a tap-to-check update check against the latest GitHub release.
+- **Sponsor screen.** GitHub Sponsors, Saweria, SociaBuzz and BagiBagi, one tap each, opened in the browser.
+- **Complete in-app FAQ.** 18 answers covering storage, models, formats, accuracy, permissions, updates, licensing and support.
+- **Privacy policy screen and PRIVACY.md.** The policy in-app and in the repository.
+- **Open source licenses screen.** MIT texts for Kikoe and whisper.cpp, plus credits for ggml, Flutter, FFmpeg and Whisper model weights.
+
+### Improvements
+
+- **Downloads/kikoe by default.** Transcripts now save into Downloads/kikoe on Android and desktop instead of next to the source file. Desktop keeps a custom folder option; Reset returns to the default.
+- **First-launch storage notice on Android.** On Android 9 and below the app asks for the legacy storage permission once; on Android 10+ saving uses MediaStore and no permission is requested.
+- **Refined UI and UX.** New app bar with FAQ and About actions, richer pick card, consistent section cards, and an About hub (version, sponsor, privacy, licenses) behind the info icon.
+- **Smoother Android decode.** Media decoding runs on a background thread instead of the UI thread, so the app stays responsive on long files.
+- **Mobile save action.** Transcripts save straight to Downloads/kikoe; share is available as a secondary action.
+- **Quieter release logging.** Debug logging is gated to debug builds.
+
 ## v1.0.1
 
 Security release: release-key-signed APKs, a fail-closed download path, a hardened Android manifest, and consistent version strings.
