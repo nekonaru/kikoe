@@ -85,7 +85,7 @@ void print_usage(const char* argv0)
         "  --outdir DIR       Write <name>.<fmt> files into DIR\n"
         "  -h, --help         Show this help\n\n"
         "Model cache: %s\n",
-        "1.0.1", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
+        "1.1.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
 }
 
 void print_error(kikoe::ErrorCode code)
