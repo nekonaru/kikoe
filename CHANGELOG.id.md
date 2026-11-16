@@ -5,6 +5,10 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.1.0
+
+Rilis fitur: About, sponsor dan FAQ lengkap di dalam aplikasi, default keluaran Downloads/kikoe, dan pemberitahuan izin penyimpanan pertama kali di Android.
+
 ### Fitur baru
 
 - **Layar About.** Identitas penulis, tautan profil GitHub, dan pemeriksaan pembaruan sekali ketuk terhadap rilis GitHub terbaru.

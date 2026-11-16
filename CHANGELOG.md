@@ -5,6 +5,10 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.1.0
+
+A feature release: About, sponsor and complete FAQ in-app, a Downloads/kikoe default output folder, and a first-launch storage notice on Android.
+
 ### New features
 
 - **About screen.** Author identity, GitHub profile link, and a tap-to-check update check against the latest GitHub release.

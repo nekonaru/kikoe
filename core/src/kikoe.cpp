@@ -61,7 +61,7 @@ int kk_abi_version(void)
 
 const char* kk_version_string(void)
 {
-    return "1.0.1";
+    return "1.1.0";
 }
 
 const char* kk_error_string(int err)
