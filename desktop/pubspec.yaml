@@ -1,7 +1,7 @@
 name: kikoe_desktop
 description: "Kikoe desktop app: free, unlimited, offline audio/video transcription."
 publish_to: 'none'
-version: 1.2.0+4
+version: 1.3.0+5
 
 environment:
   sdk: ^3.13.0
@@ -14,7 +14,8 @@ dependencies:
   path: ^1.9.1
   desktop_drop: ^0.7.0
   ffi: ^2.1.4
-  shared_preferences: ^2.3.4 # BSD-3
+  path_provider: ^2.1.5          # BSD-3
+  shared_preferences: ^2.3.4     # BSD-3
   http: ^1.4.0                   # BSD-3, version display and update check
   url_launcher: ^6.3.3           # BSD-3, opens external links (GitHub, sponsors)
   package_info_plus: ^9.0.1      # BSD-3

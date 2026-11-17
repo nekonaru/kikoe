@@ -47,6 +47,12 @@ class FaqScreen extends StatelessWidget {
         'It trims silent regions before transcription using the Silero VAD model (0.9 MB, downloaded once on first use). Results usually come out cleaner and faster on uneven audio with long pauses. Off by default.'),
     _Faq('Are my settings remembered?',
         'Yes. Your preferred model, language, translate and VAD toggles are restored on the next launch. Files and models stay on your device.'),
+    _Faq('Can I fix transcription mistakes before saving?',
+        'Yes. Tap the pencil icon on the transcript to open the editor. Each segment is a text field; timestamps stay untouched, so SRT and VTT exports stay valid.'),
+    _Faq('Where is my history?',
+        'The history icon in the app bar lists your last 50 transcriptions, with playback metadata. Tap one to view, copy, or export it; tap delete to remove it.'),
+    _Faq('What does Custom vocabulary do?',
+        'It biases the model toward your names, product and place names and spellings. Use it whenever you notice recurring mistakes (e.g. "Kikoe" being misheard). Built-in and persisted on both apps.'),
     _Faq('How do I check for updates?',
         'About > Version. Kikoe asks GitHub for the latest release and tells you whether you are up to date. Nothing is downloaded without you tapping a link.'),
   ];

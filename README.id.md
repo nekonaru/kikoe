@@ -60,6 +60,9 @@ aplikasi Android. Tanpa akun, tanpa kuota, tanpa cloud. Lihat
 |-------|-----------|
 | **Transkripsi di perangkat** | Core C++ yang sama lewat Dart FFI, decoding dengan MediaCodec, tanpa FFmpeg |
 | **Filter keheningan (VAD)** | Silero VAD opsional memangkas bagian hening sebelum transkripsi |
+| **Editor transkrip** | Perbaiki kesalahan sebelum simpan; timestamp SRT/VTT tetap valid |
+| **Riwayat** | 50 transkripsi terakhir, tersimpan di perangkat, bisa dibuka/dibagikan lagi |
+| **Custom vocabulary** | Glossari kata untuk nama produk/tempat, memperbaiki kata yang sering salah dengar |
 | **Bagikan ke Kikoe** | Bagikan audio atau video dari aplikasi lain langsung ke Kikoe |
 | **Notifikasi progres** | Notifikasi berjalan dengan progres selama proses berlangsung |
 | **Manajemen model** | Unduh dan hapus model di dalam aplikasi; checksum diverifikasi setiap unduhan |
@@ -72,6 +75,9 @@ aplikasi Android. Tanpa akun, tanpa kuota, tanpa cloud. Lihat
 | **Ekspor per file** | Ekspor TXT, SRT, VTT atau JSON per file |
 | **Downloads/kikoe default** | Transkrip disimpan ke Downloads/kikoe secara default; pilih folder lain kapan pun, Reset kembali ke default |
 | **Manajemen model** | Unduh dan verifikasi model di dalam aplikasi |
+| **Editor transkrip** | Edit per segmen sebelum simpan; SRT/VTT tetap valid |
+| **Riwayat** | 50 transkripsi terakhir di app, bisa diekspor dari sana |
+| **Custom vocabulary** | Bantu model mengenali nama produk dan tempatmu |
 
 ### CLI
 
@@ -397,6 +403,20 @@ Beri bintang di GitHub, atau sponsor lewat GitHub Sponsors, Saweria, SociaBuzz a
 </details>
 
 ---
+
+<details>
+<summary><b>Bisakah saya memperbaiki transkrip setelah selesai?</b></summary>
+
+Bisa. Ketuk ikon pensil di header transkrip. Setiap segmen menjadi bidang teks; menyimpan mengganti teks sementara timestamp SRT/VTT tetap utuh.
+
+</details>
+
+<details>
+<summary><b>Di mana transkripsi saya yang lalu?</b></summary>
+
+Ikon riwayat (jam) di app bar menampilkan 50 transkripsi terakhir. Ketuk mana saja untuk melihat, menyalin atau mengekspornya; ketuk X untuk menghapus.
+
+</details>
 
 ## Penulis
 

@@ -60,6 +60,9 @@ full product spec.
 |---------|-------------|
 | **On-device transcription** | The same C++ core over Dart FFI, decoding with MediaCodec, no FFmpeg needed |
 | **Silence filtering (VAD)** | Optional Silero VAD trims silent regions before transcription |
+| **Transcript editor** | Fix any mistake before saving; SRT/VTT timestamps stay valid |
+| **History** | Your last 50 transcriptions, on-device, reopen/share anytime |
+| **Custom vocabulary** | Bias names and product terms the model keeps mishearing |
 | **Share to Kikoe** | Share any audio or video from another app straight into Kikoe |
 | **Progress notification** | Ongoing notification with progress while a job runs |
 | **Model management** | Download and remove models in-app; checksum verified after every download |
@@ -72,6 +75,9 @@ full product spec.
 | **Per-file export** | TXT, SRT, VTT or JSON export per file |
 | **Downloads/kikoe default** | Transcripts are saved into Downloads/kikoe out of the box; pick any folder, Reset returns to the default |
 | **Model management** | Download and verify models in-app |
+| **Transcript editor** | Per-segment editor before saving; SRT/VTT stays valid |
+| **History** | Your last 50 transcriptions, export from there |
+| **Custom vocabulary** | Help the model learn your product and place names |
 
 ### CLI
 
@@ -397,6 +403,20 @@ Star it on GitHub, or sponsor via GitHub Sponsors, Saweria, SociaBuzz or BagiBag
 </details>
 
 ---
+
+<details>
+<summary><b>Can I edit a transcript after it is done?</b></summary>
+
+Yes. Tap the pencil icon on the transcript header. Each segment becomes a text field; saving replaces the text while keeping SRT/VTT timestamps intact.
+
+</details>
+
+<details>
+<summary><b>Where are my past transcriptions?</b></summary>
+
+The history icon (clock) in the app bar lists your last 50. Tap any to view, copy or export it; tap the X to delete it.
+
+</details>
 
 ## Author
 
