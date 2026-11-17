@@ -4,16 +4,18 @@
 library;
 
 class MobileModel {
-  const MobileModel(this.name, this.filename, this.sizeBytes, this.sha256, this.note);
+  const MobileModel(this.name, this.filename, this.sizeBytes, this.sha256, this.note,
+      {this.urlOverride});
   final String name;
   final String filename;
   final int sizeBytes;
   final String sha256;
   final String note;
+  final String? urlOverride;
 
   double get sizeMb => sizeBytes / (1024 * 1024);
 
-  String url() =>
+  String url() => urlOverride ??
       'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$filename';
 }
 
@@ -46,7 +48,20 @@ const List<MobileModel> kMobileModels = [
       'near-large quality'),
 ];
 
+/// Silero VAD model used for silence filtering. Downloaded on demand when
+/// the VAD toggle is enabled; never shown in the whisper model picker.
+const MobileModel kVadSilero = MobileModel(
+  'vad-silero',
+  'ggml-silero-v6.2.0.bin',
+  885098,
+  '2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987',
+  'Silero VAD v6.2.0',
+  urlOverride:
+      'https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v6.2.0.bin',
+);
+
 MobileModel? findMobileModel(String name) {
+  if (name == kVadSilero.name) return kVadSilero;
   for (final m in kMobileModels) {
     if (m.name == name) return m;
   }

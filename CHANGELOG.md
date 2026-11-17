@@ -5,6 +5,29 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.2.0
+
+A feature release: silence filtering with Silero VAD in both apps, persistent settings, multi-file share and pick on Android, and a batch of audit fixes.
+
+### New features
+
+- **Silero VAD in both apps.** New Filter silence toggle trims silent regions before transcription. The Silero model (0.9 MB) downloads on first use.
+- **Persistent settings.** Your model, language, translate and VAD preferences survive app restarts.
+- **Multi-file share and pick on Android.** Sharing or picking several audio or video files queues them all; the app processes them one at a time.
+- **Copy transcript button.** One tap copies the full transcript to the clipboard (desktop queue items and the mobile transcript card).
+- **Open output folder (desktop).** Jump straight to where the transcript was saved.
+
+### Improvements
+
+- **No silent overwrite.** Saving a transcript never overwrites an existing file; the app appends -2, -3, and so on when the name is taken.
+- **Model download errors are visible.** Desktop now shows the error instead of failing silently.
+- **Mobile share intent is fully honored.** All shared files reach the queue, not just the first.
+- **Larger Android decode pool.** Media decoding runs off the UI thread.
+
+### Bug fixes
+
+- **CLI VAD path.** The Silero model path is resolved from the model registry instead of a hardcoded filename.
+
 ## v1.1.0
 
 A feature release: About, sponsor and complete FAQ in-app, a Downloads/kikoe default output folder, and a first-launch storage notice on Android.
