@@ -96,6 +96,7 @@ class Transcriber {
   }
 
   /// Transcribe mono 16 kHz float32 PCM. [id] correlates events.
+  /// When [vadModelPath] is set, the engine filters silence via the Silero VAD.
   void transcribePcm({
     required String id,
     required Float32List samples,
@@ -104,6 +105,7 @@ class Transcriber {
     bool translate = false,
     String initialPrompt = '',
     int nThreads = 0,
+    String? vadModelPath,
   }) {
     _send({
       'type': 'transcribePcm',
@@ -114,6 +116,7 @@ class Transcriber {
       'translate': translate,
       'initialPrompt': initialPrompt,
       'nThreads': nThreads,
+      'vadModelPath': vadModelPath,
     });
   }
 
@@ -180,14 +183,18 @@ void _workerMain(SendPort readyPort) {
   Pointer<Void> engine = nullptr;
   String? engineModelPath;
   int engineThreads = 0;
+  String? engineVadModelPath;
   SendPort? events;
 
   void emit(Map<String, dynamic> map) => events?.send(map);
 
-  void ensureEngine(String modelPath, int nThreads) {
+  void ensureEngine(String modelPath, int nThreads, {String? vadModelPath}) {
     final lib = ffi;
     if (lib == null) throw const _ForeignError('FFI library is not loaded');
-    if (engine != nullptr && engineModelPath == modelPath && engineThreads == nThreads) {
+    if (engine != nullptr &&
+        engineModelPath == modelPath &&
+        engineThreads == nThreads &&
+        engineVadModelPath == vadModelPath) {
       return;
     }
     if (engine != nullptr) {
@@ -195,22 +202,25 @@ void _workerMain(SendPort readyPort) {
       engine = nullptr;
     }
     final params = calloc<KkEngineParams>();
+    final vadPath = vadModelPath?.toNativeUtf8();
     params.ref.modelPath = modelPath.toNativeUtf8();
     params.ref.nThreads = nThreads;
     params.ref.useGpu = 0; // CPU is the tested path on Android
-    params.ref.vad = 0;
-    params.ref.vadModelPath = nullptr;
+    params.ref.vad = vadModelPath != null && vadModelPath.isNotEmpty ? 1 : 0;
+    params.ref.vadModelPath = vadPath ?? nullptr;
     final err = calloc<Int32>();
     engine = lib.engineCreate(params, err);
     final code = err.value;
     calloc.free(err);
     calloc.free(params.ref.modelPath);
+    if (vadPath != null) calloc.free(vadPath);
     calloc.free(params);
     if (engine == nullptr || code != kKkOk) {
       throw _ForeignError('engine create failed: ${lib.describeError(code)}');
     }
     engineModelPath = modelPath;
     engineThreads = nThreads;
+    engineVadModelPath = vadModelPath;
   }
 
   recv.listen((dynamic raw) {
@@ -239,7 +249,11 @@ void _workerMain(SendPort readyPort) {
         }
         final lib = ffi;
         try {
-          ensureEngine(msg['modelPath'] as String, msg['nThreads'] as int);
+          ensureEngine(
+            msg['modelPath'] as String,
+            msg['nThreads'] as int,
+            vadModelPath: msg['vadModelPath'] as String?,
+          );
         } on _ForeignError catch (e) {
           emit({'type': 'transcribeFailed', 'id': id, 'message': e.message, 'cancelled': false});
           break;

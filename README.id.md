@@ -59,6 +59,7 @@ aplikasi Android. Tanpa akun, tanpa kuota, tanpa cloud. Lihat
 | Fitur | Deskripsi |
 |-------|-----------|
 | **Transkripsi di perangkat** | Core C++ yang sama lewat Dart FFI, decoding dengan MediaCodec, tanpa FFmpeg |
+| **Filter keheningan (VAD)** | Silero VAD opsional memangkas bagian hening sebelum transkripsi |
 | **Bagikan ke Kikoe** | Bagikan audio atau video dari aplikasi lain langsung ke Kikoe |
 | **Notifikasi progres** | Notifikasi berjalan dengan progres selama proses berlangsung |
 | **Manajemen model** | Unduh dan hapus model di dalam aplikasi; checksum diverifikasi setiap unduhan |

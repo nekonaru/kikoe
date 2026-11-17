@@ -85,7 +85,7 @@ void print_usage(const char* argv0)
         "  --outdir DIR       Write <name>.<fmt> files into DIR\n"
         "  -h, --help         Show this help\n\n"
         "Model cache: %s\n",
-        "1.1.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
+        "1.2.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
 }
 
 void print_error(kikoe::ErrorCode code)
@@ -318,7 +318,7 @@ int main(int argc, char** argv)
                 print_error(verr);
                 return 3;
             }
-            vad_model_path = kikoe::model_cache_dir() + "/ggml-silero-v6.2.0.bin";
+            vad_model_path = kikoe::model_cache_dir() + "/" + vad->filename;
         }
     }
 

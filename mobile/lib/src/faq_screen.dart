@@ -43,6 +43,10 @@ class FaqScreen extends StatelessWidget {
         'Yes. Kikoe is MIT licensed. Use it at work, in your business, in your own products. Keep the copyright notice if you redistribute binaries.'),
     _Faq('How do I support the project?',
         'Star it on GitHub, and if Kikoe saved you hours, sponsor via GitHub Sponsors, Saweria, SociaBuzz or BagiBagi. Links are in About > Sponsor Kikoe.'),
+    _Faq('What does Filter silence (VAD) do?',
+        'It trims silent regions before transcription using the Silero VAD model (0.9 MB, downloaded once on first use). Results usually come out cleaner and faster on uneven audio with long pauses. Off by default.'),
+    _Faq('Are my settings remembered?',
+        'Yes. Your preferred model, language, translate and VAD toggles are restored on the next launch. Files and models stay on your device.'),
     _Faq('How do I check for updates?',
         'About > Version. Kikoe asks GitHub for the latest release and tells you whether you are up to date. Nothing is downloaded without you tapping a link.'),
   ];

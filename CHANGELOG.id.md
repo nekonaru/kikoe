@@ -5,6 +5,29 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.2.0
+
+Rilis fitur: filter keheningan dengan Silero VAD di kedua aplikasi, pengaturan yang tersimpan, berbagi dan memilih banyak file di Android, dan serangkaian perbaikan dari audit mendalam.
+
+### Fitur baru
+
+- **Silero VAD di kedua aplikasi.** Toggle Filter silence memangkas bagian hening sebelum transkripsi. Model Silero (0.9 MB) diunduh pada pemakaian pertama.
+- **Pengaturan tersimpan.** Model, bahasa, translate dan toggle VAD pilihanmu bertahan setelah aplikasi ditutup.
+- **Berbagi dan memilih banyak file di Android.** Membagikan atau memilih beberapa file audio/video mengantrekan semuanya; aplikasi memproses satu per satu.
+- **Tombol salin transkrip.** Sekali ketuk menyalin seluruh transkrip ke clipboard (item antrean desktop dan kartu transkrip mobile).
+- **Buka folder keluaran (desktop).** Langsung membuka lokasi hasil simpan transkrip.
+
+### Peningkatan
+
+- **Tidak ada penimpaan diam-diam.** Menyimpan transkrip tidak pernah menimpa file yang ada; aplikasi menambah -2, -3 dan seterusnya bila nama sudah dipakai.
+- **Error unduhan model terlihat.** Desktop kini menampilkan error-nya, bukan gagal tanpa pesan.
+- **Share intent Android dihormati penuh.** Semua file yang dibagikan masuk antrean, bukan hanya yang pertama.
+- **Decode Android lebih responsif.** Decoding media berjalan di thread latar.
+
+### Perbaikan bug
+
+- **Jalur VAD CLI.** Jalur model Silero diambil dari registry model, bukan nama file yang di-hardcode.
+
 ## v1.1.0
 
 Rilis fitur: About, sponsor dan FAQ lengkap di dalam aplikasi, default keluaran Downloads/kikoe, dan pemberitahuan izin penyimpanan pertama kali di Android.

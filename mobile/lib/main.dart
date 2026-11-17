@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:share_plus/share_plus.dart';
@@ -43,20 +44,20 @@ class _KikoeAppState extends State<KikoeApp> {
     try {
       final initial = await ReceiveSharingIntent.instance.getInitialMedia();
       if (initial.isNotEmpty) {
-        _loadShared(initial.first.path);
+        _loadSharedList(initial.map((f) => f.path).toList());
       }
     } catch (e) {
       debugPrint('share intent read failed: $e');
     }
     ReceiveSharingIntent.instance.getMediaStream().listen((files) {
       if (files.isNotEmpty) {
-        _loadShared(files.first.path);
+        _loadSharedList(files.map((f) => f.path).toList());
       }
     });
   }
 
-  void _loadShared(String path) {
-    s.setInput(path);
+  void _loadSharedList(List<String> paths) {
+    s.setInputs(paths);
     // Auto-start when a file arrives via share; the user asked for it.
     if (s.selectedModelCached) {
       s.transcribe();
@@ -181,13 +182,20 @@ class _KikoeHomeState extends State<KikoeHome> {
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
+      allowMultiple: true,
       allowedExtensions: const [
         'wav', 'mp3', 'm4a', 'flac', 'ogg', 'aac', 'wma', 'opus',
         'mp4', 'mkv', 'mov', 'webm', 'avi', '3gp',
       ],
     );
-    if (result == null || result.files.single.path == null) return;
-    state.setInput(result.files.single.path!);
+    if (result == null) return;
+    final paths = result.files.map((f) => f.path).whereType<String>().toList();
+    if (paths.isEmpty) return;
+    if (paths.length == 1) {
+      state.setInput(paths.single);
+    } else {
+      state.setInputs(paths);
+    }
   }
 
   @override
@@ -242,12 +250,32 @@ class _KikoeHomeState extends State<KikoeHome> {
                   _PickCard(onTap: _pickFile)
                 else
                   _FileCard(state: state, onChange: _pickFile),
+                if (state.queue.length > 1) ...[
+                  const SizedBox(height: 10),
+                  _QueueStrip(state: state),
+                ],
                 const SizedBox(height: 14),
                 _ModelSection(state: state),
                 const SizedBox(height: 14),
                 _OptionsSection(state: state),
                 const SizedBox(height: 16),
                 _ActionButton(state: state),
+                if (state.stage == JobStage.done && state.hasNextInQueue) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.tonalIcon(
+                      onPressed: () {
+                        state.advanceQueue();
+                        if (state.selectedModelCached) {
+                          state.transcribe();
+                        }
+                      },
+                      icon: const Icon(Icons.skip_next),
+                      label: Text('Next: ${p.basename(state.queue[state.queueIndex + 1])}'),
+                    ),
+                  ),
+                ],
                 if (state.stage == JobStage.decoding || state.stage == JobStage.transcribing) ...[
                   const SizedBox(height: 16),
                   LinearProgressIndicator(
@@ -271,7 +299,30 @@ class _KikoeHomeState extends State<KikoeHome> {
                 ],
                 if (state.segments.isNotEmpty) ...[
                   const SizedBox(height: 18),
-                  const SectionLabel('Transcript'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SectionLabel('Transcript'),
+                      IconButton(
+                        tooltip: 'Copy transcript',
+                        onPressed: () {
+                          Clipboard.setData(
+                            ClipboardData(
+                              text: state.segments.map((s) => s.text.trim()).where((t) => t.isNotEmpty).join('\n'),
+                            ),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Transcript copied to clipboard'),
+                              behavior: SnackBarBehavior.floating,
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.content_copy, color: kDim, size: 20),
+                      ),
+                    ],
+                  ),
                   SectionCard(
                     child: SelectableText(
                       state.segments.map((s) => s.text).join(),
@@ -310,6 +361,37 @@ class _KikoeHomeState extends State<KikoeHome> {
           ),
         );
       },
+    );
+  }
+}
+
+class _QueueStrip extends StatelessWidget {
+  const _QueueStrip({required this.state});
+
+  final AppState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: kSurface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.playlist_play, color: kBrand, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${state.queue.length} files queued · #${state.queueIndex + 1}',
+              style: const TextStyle(fontSize: 12, color: kText, fontWeight: FontWeight.w600),
+            ),
+          ),
+          const Text('Finish file, tap Next',
+              style: TextStyle(fontSize: 10, color: kDim)),
+        ],
+      ),
     );
   }
 }
@@ -520,6 +602,34 @@ class _OptionsSection extends StatelessWidget {
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
+          SwitchListTile(
+            value: state.useVad,
+            onChanged: state.setUseVad,
+            title: const Text('Filter silence (VAD)'),
+            subtitle: state.useVad && !state.vadReady
+                ? const Text('Silero model (0.9 MB) downloads once',
+                    style: TextStyle(fontSize: 11))
+                : const Text('Skip silent regions with Silero VAD',
+                    style: TextStyle(fontSize: 11)),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (state.downloadPercentOf('vad-silero') != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.download, size: 14, color: kDim),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Downloading Silero VAD model… ${state.downloadPercentOf('vad-silero')}%',
+                      style: const TextStyle(fontSize: 11, color: kDim),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

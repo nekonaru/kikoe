@@ -59,6 +59,7 @@ full product spec.
 | Feature | Description |
 |---------|-------------|
 | **On-device transcription** | The same C++ core over Dart FFI, decoding with MediaCodec, no FFmpeg needed |
+| **Silence filtering (VAD)** | Optional Silero VAD trims silent regions before transcription |
 | **Share to Kikoe** | Share any audio or video from another app straight into Kikoe |
 | **Progress notification** | Ongoing notification with progress while a job runs |
 | **Model management** | Download and remove models in-app; checksum verified after every download |

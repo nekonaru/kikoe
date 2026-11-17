@@ -311,6 +311,31 @@ class _ControlPanel extends StatelessWidget {
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
+          SwitchListTile(
+            value: s.useVad,
+            onChanged: s.setUseVad,
+            title: const Text('Filter silence (VAD)'),
+            subtitle: s.useVad && !s.vadReady
+                ? const Text('Silero model (0.9 MB) downloads once', style: TextStyle(fontSize: 11))
+                : const Text('Skip silent regions with Silero VAD', style: TextStyle(fontSize: 11)),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (s.downloadError != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.error_outline, color: kBrand, size: 16),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    s.downloadError!,
+                    style: const TextStyle(fontSize: 11, color: kBrand),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 18),
           _StartButton(state: s),
           const SizedBox(height: 10),
@@ -592,17 +617,34 @@ class _ItemTile extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(
                   children: [
-                    for (final f in AppState.formats)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: OutlinedButton(
-                          onPressed: () => state.saveItem(item, f),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            minimumSize: const Size(0, 30),
-                          ),
-                          child: Text('Save ${f.toUpperCase()}'),
-                        ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          for (final f in AppState.formats)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 6),
+                              child: OutlinedButton(
+                                onPressed: () => state.saveItem(item, f),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  minimumSize: const Size(0, 30),
+                                ),
+                                child: Text('Save ${f.toUpperCase()}'),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Copy transcript',
+                      icon: const Icon(Icons.content_copy, size: 18, color: kDim),
+                      onPressed: () => state.copyTranscript(item),
+                    ),
+                    if (item.outputPath != null)
+                      IconButton(
+                        tooltip: 'Open output folder',
+                        icon: const Icon(Icons.folder_open, size: 18, color: kDim),
+                        onPressed: () => state.revealInFolder(item.outputPath!),
                       ),
                   ],
                 ),

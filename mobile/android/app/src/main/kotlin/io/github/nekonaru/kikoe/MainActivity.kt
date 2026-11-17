@@ -127,9 +127,20 @@ class MainActivity : FlutterActivity() {
             "kikoe"
         )
         dir.mkdirs()
-        val file = java.io.File(dir, name)
-        file.writeText(content, Charsets.UTF_8)
-        return file.absolutePath
+        var target = java.io.File(dir, name)
+        // Never overwrite an existing transcript silently.
+        if (target.exists()) {
+            val dot = name.lastIndexOf('.')
+            val stem = if (dot > 0) name.substring(0, dot) else name
+            val ext = if (dot > 0) name.substring(dot) else ""
+            var attempt = 2
+            while (target.exists()) {
+                target = java.io.File(dir, "$stem-$attempt$ext")
+                attempt++
+            }
+        }
+        target.writeText(content, Charsets.UTF_8)
+        return target.absolutePath
     }
 
     private fun mimeFor(name: String): String = when {

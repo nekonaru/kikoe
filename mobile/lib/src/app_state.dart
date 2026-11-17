@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'model_downloader.dart';
 import 'model_menu.dart';
@@ -34,10 +35,14 @@ class AppState extends ChangeNotifier {
 
   // Input.
   String? inputPath;
-
-  // Default save target: Downloads/kikoe on the device.
   String savedLocation = '';
   String? saveError;
+
+  // Session-only queue for multi-file shares. setInputs() replaces it with a
+  // fresh batch; setInput() alone uses a single-element batch implicitly.
+  List<String> queue = [];
+  int queueIndex = 0;
+  bool get hasNextInQueue => queue.length > 1 && queueIndex + 1 < queue.length;
 
   // First-launch storage permission state: notNeeded (API 29+), granted, or denied.
   // 0 = not needed, 1 = granted, 2 = needs requesting, 3 = asked, waiting for result.
@@ -55,6 +60,7 @@ class AppState extends ChangeNotifier {
   String modelName = 'small-q5_1';
   String language = 'auto';
   bool translate = false;
+  bool useVad = false;
 
   // Model cache.
   String? modelsDir;
@@ -92,6 +98,7 @@ class AppState extends ChangeNotifier {
   static const List<String> formats = ['srt', 'txt', 'vtt', 'json'];
 
   Future<void> ensureStarted() async {
+    await _loadSettings();
     try {
       await NotificationService.instance.init();
     } catch (e) {
@@ -111,6 +118,54 @@ class AppState extends ChangeNotifier {
       debugPrint('worker start failed: $e');
     }
     notifyListeners();
+  }
+
+  static const _kPrefsModel = 'kikoe_model';
+  static const _kPrefsLanguage = 'kikoe_language';
+  static const _kPrefsTranslate = 'kikoe_translate';
+  static const _kPrefsVad = 'kikoe_vad';
+
+  Future<void> _loadSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      modelName = prefs.getString(_kPrefsModel) ?? modelName;
+      language = prefs.getString(_kPrefsLanguage) ?? language;
+      translate = prefs.getBool(_kPrefsTranslate) ?? translate;
+      useVad = prefs.getBool(_kPrefsVad) ?? useVad;
+      notifyListeners();
+    } catch (_) {
+      // Preferences are best-effort; defaults are fine.
+    }
+  }
+
+  Future<void> _saveSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kPrefsModel, modelName);
+      await prefs.setString(_kPrefsLanguage, language);
+      await prefs.setBool(_kPrefsTranslate, translate);
+      await prefs.setBool(_kPrefsVad, useVad);
+    } catch (_) {
+      // Best-effort persistence.
+    }
+  }
+
+  /// Silero VAD model name (no whisper picker entry; downloads on first toggle).
+  static const vadModelName = 'vad-silero';
+  static const vadModelFile = 'ggml-silero-v6.2.0.bin';
+
+  String get vadModelPath => p.join(modelsDir ?? '', vadModelFile);
+
+  bool get vadReady => modelsDir != null && File(vadModelPath).existsSync();
+
+  /// Toggle VAD silence filtering; downloads the Silero model on first use.
+  void setUseVad(bool value) {
+    useVad = value;
+    notifyListeners();
+    _saveSettings();
+    if (value && !vadReady && !_downloadPercent.containsKey(vadModelName)) {
+      downloadModel(vadModelName);
+    }
   }
 
   /// Marks the storage notice as shown (first-launch flag).
@@ -138,31 +193,73 @@ class AppState extends ChangeNotifier {
   }
 
   /// Set the input file and reset state. Does not start the job; call
-  /// [transcribe] or let the UI trigger it.
+  /// [transcribe] or let the UI trigger it. A single file share resets the
+  /// queue to just this file.
   void setInput(String path) {
+    queue = [path];
+    queueIndex = 0;
     inputPath = path;
     stage = JobStage.idle;
     progress = 0;
     error = null;
     segments.clear();
     outputPath = null;
+    savedLocation = '';
+    saveError = null;
     notifyListeners();
+  }
+
+  /// Queue several files (multi-file share or multi-pick). The first file
+  /// becomes the active input.
+  void setInputs(List<String> paths) {
+    final cleaned = paths.where((p) => p.isNotEmpty).toList();
+    if (cleaned.isEmpty) return;
+    queue = cleaned;
+    queueIndex = 0;
+    inputPath = cleaned.first;
+    stage = JobStage.idle;
+    progress = 0;
+    error = null;
+    segments.clear();
+    outputPath = null;
+    savedLocation = '';
+    saveError = null;
+    notifyListeners();
+  }
+
+  /// Advance to the next queued file. Returns true when there is one.
+  bool advanceQueue() {
+    if (!hasNextInQueue) return false;
+    queueIndex += 1;
+    inputPath = queue[queueIndex];
+    stage = JobStage.idle;
+    progress = 0;
+    error = null;
+    segments.clear();
+    outputPath = null;
+    savedLocation = '';
+    saveError = null;
+    notifyListeners();
+    return true;
   }
 
   void setModel(String name) {
     modelName = name;
     downloadError = null;
     notifyListeners();
+    _saveSettings();
   }
 
   void setLanguage(String value) {
     language = value;
     notifyListeners();
+    _saveSettings();
   }
 
   void setTranslate(bool value) {
     translate = value;
     notifyListeners();
+    _saveSettings();
   }
 
   /// Decode media through the platform, transcribe with the FFI core, and
@@ -203,6 +300,7 @@ class AppState extends ChangeNotifier {
       modelPath: modelPath,
       language: language,
       translate: translate,
+      vadModelPath: useVad && vadReady ? vadModelPath : null,
     );
   }
 
