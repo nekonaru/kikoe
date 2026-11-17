@@ -318,17 +318,17 @@ class AppState extends ChangeNotifier {
   /// to the output path. No FFI round-trip; the Dart renderer honors edits.
   void saveItem(QueueItem item, String format) {
     if (item.segments.isEmpty) return;
-    // Render synchronously; skip the silly double-click source of truth.
-    item.outputPath = _outputPathFor(item, format);
+    final content = renderFormat(
+      item.segments.map((s) => RenderSegment(s.startMs, s.endMs, s.text)).toList(),
+      format,
+    );
+    if (content.isEmpty) return;
+    final path = _outputPathFor(item, format);
     try {
-      final content = renderFormat(
-        item.segments.map((s) => RenderSegment(s.startMs, s.endMs, s.text)).toList(),
-        format,
-      );
-      if (content.isEmpty) return;
-      File(item.outputPath!).writeAsStringSync(content);
+      File(path).writeAsStringSync(content);
+      item.outputPath = path;
     } catch (e) {
-      item.error = 'could not write ${item.outputPath}: $e';
+      item.error = 'could not write $path: $e';
     }
     notifyListeners();
   }
