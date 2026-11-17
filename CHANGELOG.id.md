@@ -5,6 +5,28 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.3.0
+
+Fitur baru sejak v1.2.0: editor transkrip di dalam aplikasi, pustaka riwayat, custom vocabulary, dan save yang tidak lagi bergantung pada worker.
+
+### Fitur baru
+
+- **Editor transkrip.** Perbaiki kesalahan pengenalan per segmen sebelum simpan. Ekspor SRT dan VTT tetap membawa timestamp yang tepat; ekspor JSON meng-escape Unicode dengan benar.
+- **Pustaka riwayat.** Ketuk ikon riwayat untuk melihat 50 transkripsi terakhir dengan jumlah kata; buka ulang, salin, ekspor ulang, atau hapus salah satunya.
+- **Custom vocabulary.** Bidang hint opsional mengarahkan decoder ke nama produk, nama tempat dan ejaanmu (tersimpan). Tidak aktif tanpa kamu nyalakan.
+- **Render format lokal.** Save dan share merender TXT, SRT, VTT dan JSON di Dart, cocok dengan formatter core byte-untuk-byte; edit tercermin langsung.
+
+### Peningkatan
+
+- **Salin transkripsi sekali ketuk.** Kedua aplikasi menyalin seluruh teks dalam satu ketukan.
+- **State per file di Android.** Antrean file yang di-pick/share kini menampilkan progres, memindahkan lewat tombol Next; keluaran save tiap file dilacak terpisah.
+- **Pengaturan tersimpan antar sesi** (model, bahasa, translate, VAD, vocabulary).
+- **Simpan tidak menimpa.** File yang sudah ada diberi akhiran -2, -3. Aplikasi desktop juga mendapat tombol Open output folder.
+
+### Perbaikan bug
+
+- **Pencarian jalur VAD CLI** memakai registry, bukan nama file hard-coded.
+
 ## v1.2.0
 
 Rilis fitur: filter keheningan dengan Silero VAD di kedua aplikasi, pengaturan yang tersimpan, berbagi dan memilih banyak file di Android, dan serangkaian perbaikan dari audit mendalam.

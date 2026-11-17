@@ -13,7 +13,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'model_downloader.dart';
 import 'model_menu.dart';
 import 'notification_service.dart';
+import 'transcript.dart';
 import 'transcriber.dart';
+import 'history_store.dart';
 
 enum JobStage { idle, decoding, transcribing, done, failed, cancelled }
 
@@ -61,6 +63,7 @@ class AppState extends ChangeNotifier {
   String language = 'auto';
   bool translate = false;
   bool useVad = false;
+  String initialPrompt = '';
 
   // Model cache.
   String? modelsDir;
@@ -82,6 +85,14 @@ class AppState extends ChangeNotifier {
 
   bool get selectedModelCached =>
       selectedModel != null && modelCached(selectedModel!);
+
+  /// Replace the segment list wholesale (used by the transcript editor).
+  void replaceSegments(List<Segment> edited) {
+    segments
+      ..clear()
+      ..addAll(edited);
+    notifyListeners();
+  }
 
   String? get selectedModelPath {
     final model = selectedModel;
@@ -124,6 +135,7 @@ class AppState extends ChangeNotifier {
   static const _kPrefsLanguage = 'kikoe_language';
   static const _kPrefsTranslate = 'kikoe_translate';
   static const _kPrefsVad = 'kikoe_vad';
+  static const _kPrefsPrompt = 'kikoe_initial_prompt';
 
   Future<void> _loadSettings() async {
     try {
@@ -132,6 +144,7 @@ class AppState extends ChangeNotifier {
       language = prefs.getString(_kPrefsLanguage) ?? language;
       translate = prefs.getBool(_kPrefsTranslate) ?? translate;
       useVad = prefs.getBool(_kPrefsVad) ?? useVad;
+      initialPrompt = prefs.getString(_kPrefsPrompt) ?? initialPrompt;
       notifyListeners();
     } catch (_) {
       // Preferences are best-effort; defaults are fine.
@@ -145,6 +158,11 @@ class AppState extends ChangeNotifier {
       await prefs.setString(_kPrefsLanguage, language);
       await prefs.setBool(_kPrefsTranslate, translate);
       await prefs.setBool(_kPrefsVad, useVad);
+      if (initialPrompt.isEmpty) {
+        await prefs.remove(_kPrefsPrompt);
+      } else {
+        await prefs.setString(_kPrefsPrompt, initialPrompt);
+      }
     } catch (_) {
       // Best-effort persistence.
     }
@@ -262,6 +280,12 @@ class AppState extends ChangeNotifier {
     _saveSettings();
   }
 
+  void setInitialPrompt(String value) {
+    initialPrompt = value;
+    notifyListeners();
+    _saveSettings();
+  }
+
   /// Decode media through the platform, transcribe with the FFI core, and
   /// report progress. Safe to call once per [setInput]; a new job is ignored
   /// while one is running.
@@ -300,6 +324,7 @@ class AppState extends ChangeNotifier {
       modelPath: modelPath,
       language: language,
       translate: translate,
+      initialPrompt: initialPrompt,
       vadModelPath: useVad && vadReady ? vadModelPath : null,
     );
   }
@@ -365,24 +390,57 @@ class AppState extends ChangeNotifier {
     return out;
   }
 
-  /// Ask the worker to render the last transcription as [format], then save
-  /// it into Downloads/kikoe. The result arrives as a FormatResult event.
-  /// [onReady] is called with the saved location once the file is written.
+  /// Render [format] from the current segments and save it into
+  /// Downloads/kikoe. Fire-and-forget; [onReady] is called once written.
   void saveTranscription(String format, void Function(String location) onReady) {
-    if (segments.isEmpty) return;
-    transcriber.formatLast('export', format);
-    _pendingSave = (location, _) => onReady(location);
+    final rendered = _renderNow(format);
+    if (rendered.isEmpty) return;
+    unawaited(_saveExport(rendered, format, onReady));
+  }
+
+  Future<void> _saveExport(String content, String format, void Function(String location) onReady) async {
+    final name = (inputPath != null) ? p.basenameWithoutExtension(inputPath!) : 'kikoe';
+    final fileName = '${name}_kikoe.$format';
+    try {
+      const channel = MethodChannel('kikoe/files');
+      final location = await channel.invokeMethod<String>('saveToDownloads', {
+        'name': fileName,
+        'content': content,
+      });
+      savedLocation = location ?? 'Downloads/kikoe/$fileName';
+      notifyListeners();
+      onReady(savedLocation);
+    } catch (e) {
+      saveError = '$e';
+      notifyListeners();
+    }
   }
 
   /// Share the last transcription via the system share sheet.
   void shareTranscription(String format, void Function(String path) onReady) {
-    if (segments.isEmpty) return;
-    transcriber.formatLast('export', format);
-    _pendingShare = (path, _) => onReady(path);
+    final rendered = _renderNow(format);
+    if (rendered.isEmpty) return;
+    unawaited(_writeShareFile(rendered, format, onReady));
   }
 
-  void Function(String, String)? _pendingSave;
-  void Function(String, String)? _pendingShare;
+  Future<void> _writeShareFile(String content, String format, void Function(String path) onReady) async {
+    final name = (inputPath != null) ? p.basenameWithoutExtension(inputPath!) : 'kikoe';
+    final dir = await getTemporaryDirectory();
+    final file = File(p.join(dir.path, '${name}_kikoe.$format'));
+    await file.writeAsString(content);
+    outputPath = file.path;
+    notifyListeners();
+    onReady(file.path);
+  }
+
+  /// Render the current segments as [format] using the Dart renderer.
+  String _renderNow(String format) {
+    if (segments.isEmpty) return '';
+    return renderFormat(
+      segments.map((s) => RenderSegment(s.startMs, s.endMs, s.text)).toList(),
+      format,
+    );
+  }
 
   void _onEvent(TranscriberEvent event) {
     switch (event) {
@@ -401,6 +459,14 @@ class AppState extends ChangeNotifier {
         progress = 100;
         NotificationService.instance.cancel();
         NotificationService.instance.showDone(p.basename(inputPath ?? 'file'));
+        // Persist to history (bounded, local JSON files).
+        final snapshot = segments.toList();
+        unawaited(HistoryStore.instance.add(
+          fileName: p.basename(inputPath ?? 'file'),
+          segments: snapshot
+              .map((s) => RenderSegment(s.startMs, s.endMs, s.text))
+              .toList(),
+        ));
         notifyListeners();
       case TranscribeFailed():
         stage = event.cancelled ? JobStage.cancelled : JobStage.failed;
@@ -408,46 +474,9 @@ class AppState extends ChangeNotifier {
         NotificationService.instance.cancel();
         notifyListeners();
       case FormatResult():
-        final save = _pendingSave;
-        final share = _pendingShare;
-        _pendingSave = null;
-        _pendingShare = null;
-        if (event.content.isEmpty) return;
-        if (save != null) {
-          unawaited(_saveExport(event.content, event.format, save));
-        } else if (share != null) {
-          unawaited(_writeShareFile(event.content, event.format, share));
-        }
+        // Formats are rendered locally now; the worker's format result is unused.
         break;
     }
-  }
-
-  Future<void> _saveExport(String content, String format, void Function(String, String) cb) async {
-    final name = (inputPath != null) ? p.basenameWithoutExtension(inputPath!) : 'kikoe';
-    final fileName = '${name}_kikoe.$format';
-    try {
-      const channel = MethodChannel('kikoe/files');
-      final location = await channel.invokeMethod<String>('saveToDownloads', {
-        'name': fileName,
-        'content': content,
-      });
-      savedLocation = location ?? 'Downloads/kikoe/$fileName';
-      notifyListeners();
-      cb(savedLocation, content);
-    } catch (e) {
-      saveError = '$e';
-      notifyListeners();
-    }
-  }
-
-  Future<void> _writeShareFile(String content, String format, void Function(String, String) cb) async {
-    final name = (inputPath != null) ? p.basenameWithoutExtension(inputPath!) : 'kikoe';
-    final dir = await getTemporaryDirectory();
-    final file = File(p.join(dir.path, '${name}_kikoe.$format'));
-    await file.writeAsString(content);
-    outputPath = file.path;
-    notifyListeners();
-    cb(file.path, content);
   }
 
   @override

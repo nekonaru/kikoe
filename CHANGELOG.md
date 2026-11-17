@@ -5,6 +5,28 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.3.0
+
+New features since v1.2.0: in-app transcript editor, history library, custom vocabulary hint, and a save button that no longer depends on the worker.
+
+### New features
+
+- **Transcript editor.** Fix recognition mistakes per segment before saving. SRT and VTT exports keep exact timestamps; JSON exports escape Unicode correctly.
+- **History library.** Tap the history icon to see your last 50 transcriptions with word counts; reopen, copy, re-export or delete any of them.
+- **Custom vocabulary.** An optional hint field biases the decoder toward your product names, places and spellings (persisted). On by default for nothing; you opt in per launch.
+- **Local format rendering.** Save and share render TXT, SRT, VTT and JSON in Dart, matching the core formatter byte-for-byte; edits are reflected immediately.
+
+### Improvements
+
+- **Tap-to-copy transcript.** Both apps copy the full text in one tap.
+- **Per-file state retention on Android.** Queue of picked/shared files now shows progress, stepping through Next; each file's save output is tracked separately.
+- **Settings persist across restarts** (model, language, translate, VAD, vocabulary).
+- **Save never overwrites.** Existing files get -2, -3 suffixes. Desktop app also gains an Open output folder button.
+
+### Bug fixes
+
+- **CLI VAD path lookup** uses the registry instead of a hard-coded filename.
+
 ## v1.2.0
 
 A feature release: silence filtering with Silero VAD in both apps, persistent settings, multi-file share and pick on Android, and a batch of audit fixes.

@@ -7,9 +7,11 @@ import 'package:path/path.dart' as p;
 import 'src/about_screen.dart';
 import 'src/app_state.dart';
 import 'src/faq_screen.dart';
+import 'src/history_screen.dart';
 import 'src/kikoe_theme.dart';
 import 'src/model_menu.dart';
 import 'src/queue_item.dart';
+import 'src/transcript_editor_screen.dart';
 
 void main() {
   runApp(const KikoeApp());
@@ -162,6 +164,13 @@ class _Header extends StatelessWidget {
               message: state.ffiError ?? 'The kikoe_ffi library did not load. Transcription is unavailable.',
               child: const Icon(Icons.warning_amber_rounded, color: kBrand),
             ),
+          IconButton(
+            tooltip: 'History',
+            icon: const Icon(Icons.history, color: kText),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const HistoryScreen()),
+            ),
+          ),
           IconButton(
             tooltip: 'FAQ',
             icon: const Icon(Icons.help_outline, color: kText),
@@ -321,6 +330,11 @@ class _ControlPanel extends StatelessWidget {
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
+          const SizedBox(height: 4),
+          const Text('Custom vocabulary (optional)',
+              style: TextStyle(fontSize: 10, color: kDim, letterSpacing: 0.6)),
+          const SizedBox(height: 4),
+          _PromptField(state: s),
           if (s.downloadError != null) ...[
             const SizedBox(height: 4),
             Row(
@@ -350,9 +364,54 @@ class _ControlPanel extends StatelessWidget {
   }
 }
 
+class _PromptField extends StatefulWidget {
+  const _PromptField({required this.state});
+
+  final AppState state;
+
+  @override
+  State<_PromptField> createState() => _PromptFieldState();
+}
+
+class _PromptFieldState extends State<_PromptField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.state.initialPrompt);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      onChanged: widget.state.setInitialPrompt,
+      minLines: 1,
+      maxLines: 3,
+      style: const TextStyle(fontSize: 12, color: kText),
+      decoration: InputDecoration(
+        hintText: 'Names, jargon, e.g. Kikoe, Prasetyo…',
+        hintStyle: const TextStyle(fontSize: 11, color: kDim),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: kSurface2),
+        ),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+    );
+  }
+}
+
 class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.text);
-
   final String text;
 
   @override
@@ -633,6 +692,27 @@ class _ItemTile extends StatelessWidget {
                               ),
                             ),
                         ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Edit transcript',
+                      icon: const Icon(Icons.edit_outlined, size: 18, color: kDim),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => TranscriptEditorScreen(
+                            segments: item.segments
+                                .map((s) => SegmentEntry(s.startMs, s.endMs, s.text))
+                                .toList(),
+                            onSave: (entries) {
+                              state.replaceItemSegments(
+                                item,
+                                entries
+                                    .map((e) => Segment(e.startMs, e.endMs, e.text.trim()))
+                                    .toList(),
+                              );
+                            },
+                          ),
+                        ),
                       ),
                     ),
                     IconButton(

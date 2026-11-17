@@ -13,8 +13,29 @@ import 'package:share_plus/share_plus.dart';
 import 'src/about_screen.dart';
 import 'src/app_state.dart';
 import 'src/faq_screen.dart';
+import 'src/history_screen.dart';
 import 'src/kikoe_theme.dart';
 import 'src/model_menu.dart';
+import 'src/transcript_editor_screen.dart';
+
+int _wordCount(List<dynamic> segments) {
+  var count = 0;
+  for (final s in segments) {
+    final text = (s.text as String).trim();
+    if (text.isEmpty) continue;
+    count += text.split(RegExp(r'\s+')).length;
+  }
+  return count;
+}
+
+String _durationLabel(List<dynamic> segments) {
+  if (segments.isEmpty) return '0:00';
+  final ms = segments.last.endMs as int;
+  final totalSeconds = ms ~/ 1000;
+  final minutes = totalSeconds ~/ 60;
+  final seconds = totalSeconds % 60;
+  return '$minutes:${seconds.toString().padLeft(2, '0')}';
+}
 
 void main() {
   runApp(const KikoeApp());
@@ -227,6 +248,13 @@ class _KikoeHomeState extends State<KikoeHome> {
             ),
             actions: [
               IconButton(
+                tooltip: 'History',
+                icon: const Icon(Icons.history, color: kText),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                ),
+              ),
+              IconButton(
                 tooltip: 'FAQ',
                 icon: const Icon(Icons.help_outline, color: kText),
                 onPressed: () => Navigator.of(context).push(
@@ -303,23 +331,50 @@ class _KikoeHomeState extends State<KikoeHome> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const SectionLabel('Transcript'),
-                      IconButton(
-                        tooltip: 'Copy transcript',
-                        onPressed: () {
-                          Clipboard.setData(
-                            ClipboardData(
-                              text: state.segments.map((s) => s.text.trim()).where((t) => t.isNotEmpty).join('\n'),
-                            ),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Transcript copied to clipboard'),
-                              behavior: SnackBarBehavior.floating,
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.content_copy, color: kDim, size: 20),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Edit transcript',
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => TranscriptEditorScreen(
+                                    segments: state.segments
+                                        .map((s) => SegmentEntry(s.startMs, s.endMs, s.text))
+                                        .toList(),
+                                    onSave: (entries) {
+                                      state.replaceSegments(
+                                        entries
+                                            .map((e) => Segment(e.startMs, e.endMs, e.text.trim()))
+                                            .toList(),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.edit_outlined, color: kDim, size: 20),
+                          ),
+                          IconButton(
+                            tooltip: 'Copy transcript',
+                            onPressed: () {
+                              Clipboard.setData(
+                                ClipboardData(
+                                  text: state.segments.map((s) => s.text.trim()).where((t) => t.isNotEmpty).join('\n'),
+                                ),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Transcript copied to clipboard'),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.content_copy, color: kDim, size: 20),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -328,6 +383,11 @@ class _KikoeHomeState extends State<KikoeHome> {
                       state.segments.map((s) => s.text).join(),
                       style: const TextStyle(fontSize: 13.5, color: kText, height: 1.5),
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${_wordCount(state.segments)} words · ${_durationLabel(state.segments)} · ${state.segments.length} segments',
+                    style: const TextStyle(fontSize: 11, color: kDim),
                   ),
                   const SizedBox(height: 12),
                   const SectionLabel('Save or share'),
@@ -563,6 +623,51 @@ class _ModelSection extends StatelessWidget {
   }
 }
 
+class _PromptField extends StatefulWidget {
+  const _PromptField({required this.state});
+
+  final AppState state;
+
+  @override
+  State<_PromptField> createState() => _PromptFieldState();
+}
+
+class _PromptFieldState extends State<_PromptField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.state.initialPrompt);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      onChanged: widget.state.setInitialPrompt,
+      minLines: 1,
+      maxLines: 3,
+      style: const TextStyle(fontSize: 12, color: kText),
+      decoration: InputDecoration(
+        labelText: 'Custom vocabulary (optional)',
+        hintText: 'Names, jargon, e.g. Kikoe, Prasetyo, .srt…',
+        hintStyle: const TextStyle(fontSize: 11, color: kDim),
+        labelStyle: const TextStyle(fontSize: 11, color: kDim),
+        border: InputBorder.none,
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+    );
+  }
+}
+
 class _OptionsSection extends StatelessWidget {
   const _OptionsSection({required this.state});
 
@@ -614,6 +719,8 @@ class _OptionsSection extends StatelessWidget {
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
+          const SizedBox(height: 4),
+          _PromptField(state: state),
           if (state.downloadPercentOf('vad-silero') != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),

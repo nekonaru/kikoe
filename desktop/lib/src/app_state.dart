@@ -11,7 +11,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'model_menu.dart';
 import 'queue_item.dart';
+import 'transcript.dart';
 import 'transcriber.dart';
+import 'history_store.dart';
 
 class AppState extends ChangeNotifier {
   AppState() {
@@ -30,6 +32,7 @@ class AppState extends ChangeNotifier {
   int nThreads = 0; // 0 = auto
   bool useGpu = false;
   String saveFormat = 'srt';
+  String initialPrompt = '';
   bool useVad = false;
 
   /// null = default (Downloads/kikoe on Windows, ~/Downloads/kikoe elsewhere).
@@ -58,7 +61,6 @@ class AppState extends ChangeNotifier {
   String? downloadError;
 
   bool busy = false;
-  final Set<String> _saveRequested = {}; // '$id:$format' pairs in flight
 
   static const List<String> languages = [
     'auto', 'id', 'en', 'ja', 'zh', 'ko', 'ms', 'vi', 'th',
@@ -129,6 +131,7 @@ class AppState extends ChangeNotifier {
   static const _kPrefsFormat = 'kikoe_format';
   static const _kPrefsOutDir = 'kikoe_outdir';
   static const _kPrefsVad = 'kikoe_vad';
+  static const _kPrefsPrompt = 'kikoe_initial_prompt';
 
   Future<void> _loadSettings() async {
     try {
@@ -140,6 +143,7 @@ class AppState extends ChangeNotifier {
       useGpu = prefs.getBool(_kPrefsGpu) ?? useGpu;
       saveFormat = prefs.getString(_kPrefsFormat) ?? saveFormat;
       useVad = prefs.getBool(_kPrefsVad) ?? useVad;
+      initialPrompt = prefs.getString(_kPrefsPrompt) ?? initialPrompt;
       final custom = prefs.getString(_kPrefsOutDir);
       if (custom != null && custom.isNotEmpty) customOutDir = custom;
       notifyListeners();
@@ -158,6 +162,11 @@ class AppState extends ChangeNotifier {
       await prefs.setBool(_kPrefsGpu, useGpu);
       await prefs.setString(_kPrefsFormat, saveFormat);
       await prefs.setBool(_kPrefsVad, useVad);
+      if (initialPrompt.isEmpty) {
+        await prefs.remove(_kPrefsPrompt);
+      } else {
+        await prefs.setString(_kPrefsPrompt, initialPrompt);
+      }
       if (customOutDir != null) {
         await prefs.setString(_kPrefsOutDir, customOutDir!);
       } else {
@@ -208,6 +217,7 @@ class AppState extends ChangeNotifier {
       translate: translate,
       nThreads: nThreads,
       useGpu: useGpu,
+      initialPrompt: initialPrompt,
       vadModelPath: useVad && vadReady ? vadModelPath : null,
     );
   }
@@ -222,6 +232,14 @@ class AppState extends ChangeNotifier {
     downloads.add(model.name);
     notifyListeners();
     transcriber.downloadModel(model.name);
+  }
+
+  /// Replace an item's segments wholesale (used by the transcript editor).
+  void replaceItemSegments(QueueItem item, List<Segment> edited) {
+    item.segments
+      ..clear()
+      ..addAll(edited);
+    notifyListeners();
   }
 
   /// Copy the full transcript of [item] to the clipboard.
@@ -290,15 +308,29 @@ class AppState extends ChangeNotifier {
     _saveSettings();
   }
 
-  /// Request a save of [item] in [format]; the worker renders it via
-  /// kk_format_last and we write the file when the result arrives.
+  void setInitialPrompt(String value) {
+    initialPrompt = value;
+    notifyListeners();
+    _saveSettings();
+  }
+
+  /// Render [format] from [item]'s (possibly edited) segments and write it
+  /// to the output path. No FFI round-trip; the Dart renderer honors edits.
   void saveItem(QueueItem item, String format) {
     if (item.segments.isEmpty) return;
-    final key = '${item.id}:$format';
-    if (_saveRequested.contains(key)) return;
-    _saveRequested.add(key);
+    // Render synchronously; skip the silly double-click source of truth.
+    item.outputPath = _outputPathFor(item, format);
+    try {
+      final content = renderFormat(
+        item.segments.map((s) => RenderSegment(s.startMs, s.endMs, s.text)).toList(),
+        format,
+      );
+      if (content.isEmpty) return;
+      File(item.outputPath!).writeAsStringSync(content);
+    } catch (e) {
+      item.error = 'could not write ${item.outputPath}: $e';
+    }
     notifyListeners();
-    transcriber.formatLast(item.id, format);
   }
 
   void _onEvent(TranscriberEvent event) {
@@ -335,6 +367,13 @@ class AppState extends ChangeNotifier {
         if (item != null) {
           item.status = QueueStatus.done;
           item.progress = 100;
+          final snapshot = item.segments.toList();
+          unawaited(HistoryStore.instance.add(
+            fileName: item.name,
+            segments: snapshot
+                .map((s) => RenderSegment(s.startMs, s.endMs, s.text))
+                .toList(),
+          ));
         }
         busy = false;
         notifyListeners();
@@ -349,18 +388,8 @@ class AppState extends ChangeNotifier {
         notifyListeners();
         start();
       case FormatResult():
-        final item = _find(event.id);
-        _saveRequested.remove('${event.id}:${event.format}');
-        if (item != null && event.content.isNotEmpty) {
-          final path = _outputPathFor(item, event.format);
-          try {
-            File(path).writeAsStringSync(event.content);
-            item.outputPath = path;
-          } catch (e) {
-            item.error = 'could not write $path: $e';
-          }
-        }
-        notifyListeners();
+        // Formats are rendered locally now; the worker's format result is unused.
+        break;
     }
   }
 
