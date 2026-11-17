@@ -2,6 +2,7 @@
 library;
 
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'kikoe_ffi.dart';
 import 'model_downloader.dart';
 import 'model_menu.dart';
 import 'notification_service.dart';
@@ -74,6 +76,35 @@ class AppState extends ChangeNotifier {
 
   int abiVersion = -1;
   bool get ffiReady => abiVersion >= 0;
+
+  // Engine pointer for direct native polling of kk_last_progress() while the
+  // worker isolate is blocked inside whisper_full().
+  int? _enginePtr;
+  Timer? _progressTimer;
+
+  void _startProgressPolling() {
+    _progressTimer?.cancel();
+    final addr = _enginePtr;
+    if (addr == null) return;
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+      try {
+        final lib = KikoeFFI.load();
+        final pct = lib.lastProgress(Pointer<Void>.fromAddress(addr));
+        if (pct >= 0 && pct <= 100 && pct != progress) {
+          progress = pct;
+          NotificationService.instance.showProgress(pct);
+          notifyListeners();
+        }
+      } catch (_) {
+        // If FFI is unavailable we simply show the indeterminate bar.
+      }
+    });
+  }
+
+  void _stopProgressPolling() {
+    _progressTimer?.cancel();
+    _progressTimer = null;
+  }
 
   MobileModel? get selectedModel => findMobileModel(modelName);
 
@@ -447,6 +478,10 @@ class AppState extends ChangeNotifier {
       case Ready():
         abiVersion = event.abiVersion;
         notifyListeners();
+      case EngineReady():
+        _enginePtr = event.ptr;
+        _startProgressPolling();
+        notifyListeners();
       case TranscribeProgress():
         progress = event.percent;
         NotificationService.instance.showProgress(progress);
@@ -457,6 +492,7 @@ class AppState extends ChangeNotifier {
       case TranscribeDone():
         stage = JobStage.done;
         progress = 100;
+        _stopProgressPolling();
         NotificationService.instance.cancel();
         NotificationService.instance.showDone(p.basename(inputPath ?? 'file'));
         // Persist to history (bounded, local JSON files).
@@ -471,6 +507,7 @@ class AppState extends ChangeNotifier {
       case TranscribeFailed():
         stage = event.cancelled ? JobStage.cancelled : JobStage.failed;
         error = event.message;
+        _stopProgressPolling();
         NotificationService.instance.cancel();
         notifyListeners();
       case FormatResult():
@@ -481,6 +518,7 @@ class AppState extends ChangeNotifier {
 
   @override
   void dispose() {
+    _stopProgressPolling();
     _sub?.cancel();
     try {
       NotificationService.instance.cancel();

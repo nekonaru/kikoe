@@ -133,6 +133,7 @@ ErrorCode Engine::transcribe_impl(const float* samples,
     if (n_samples > kMaxSamples) return ErrorCode::AudioTooLong;
 
     cancel_.store(false, std::memory_order_relaxed);
+    progress_percent_.store(0, std::memory_order_relaxed);
     SegmentList collected;
 
     // whisper_full_default_params() fills every field with the OpenAI defaults.
@@ -164,6 +165,7 @@ ErrorCode Engine::transcribe_impl(const float* samples,
     wparams.new_segment_callback_user_data = &cb;
     wparams.progress_callback = [](whisper_context* /*ctx*/, whisper_state* /*state*/, int progress, void* user_data) {
         auto* ccb = static_cast<CallbackContext*>(user_data);
+        if (ccb) ccb->self->progress_percent_.store(progress, std::memory_order_relaxed);
         if (ccb && ccb->on_progress) ccb->on_progress(progress, ccb->user);
     };
     wparams.progress_callback_user_data = &cb;
@@ -174,6 +176,7 @@ ErrorCode Engine::transcribe_impl(const float* samples,
     wparams.abort_callback_user_data = this;
 
     const int rc = whisper_full(ctx_, wparams, samples, static_cast<int>(n_samples));
+    if (rc == 0) progress_percent_.store(100, std::memory_order_relaxed);
     if (rc != 0) {
         return cancel_.load(std::memory_order_relaxed) ? ErrorCode::Cancelled : ErrorCode::EngineFailed;
     }

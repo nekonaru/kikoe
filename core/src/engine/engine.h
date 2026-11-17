@@ -55,6 +55,10 @@ public:
     // ErrorCode::Cancelled at the next abort check.
     void cancel();
 
+    // Current progress (0..100) of the running transcribe() while it runs;
+    // 0 before start; 100 once done. Relaxed atomic read, always safe.
+    int progress_percent() const { return progress_percent_.load(std::memory_order_relaxed); }
+
 private:
     Engine() = default;
     ErrorCode transcribe_impl(const float* samples,
@@ -68,6 +72,7 @@ private:
     whisper_context* ctx_ = nullptr;
     int n_threads_ = 1;
     std::atomic<bool> cancel_{false};
+    std::atomic<int> progress_percent_{0};
 };
 
 } // namespace kikoe

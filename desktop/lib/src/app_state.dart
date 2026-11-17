@@ -2,6 +2,7 @@
 library;
 
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'kikoe_ffi.dart';
 import 'model_menu.dart';
 import 'queue_item.dart';
 import 'transcript.dart';
@@ -61,6 +63,39 @@ class AppState extends ChangeNotifier {
   String? downloadError;
 
   bool busy = false;
+
+  // Engine pointer for polling kk_last_progress() while the worker is blocked.
+  int? _enginePtr;
+  Timer? _progressTimer;
+
+  int? _currentEnginePtr() => _enginePtr;
+
+  void _startProgressPolling() {
+    _progressTimer?.cancel();
+    final addr = _currentEnginePtr();
+    if (addr == null) return;
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+      try {
+        final lib = KikoeFFI.load();
+        final pct = lib.lastProgress(Pointer<Void>.fromAddress(addr));
+        if (pct >= 0 && pct <= 100) {
+          for (final item in items) {
+            if (item.status == QueueStatus.transcribing) {
+              item.progress = pct;
+            }
+          }
+          notifyListeners();
+        }
+      } catch (_) {
+        // If FFI is unavailable we simply keep the old indeterminate display.
+      }
+    });
+  }
+
+  void _stopProgressPolling() {
+    _progressTimer?.cancel();
+    _progressTimer = null;
+  }
 
   static const List<String> languages = [
     'auto', 'id', 'en', 'ja', 'zh', 'ko', 'ms', 'vi', 'th',
@@ -342,6 +377,10 @@ class AppState extends ChangeNotifier {
         cacheDir = event.cacheDir;
         abiVersion = event.abiVersion;
         notifyListeners();
+      case EngineReady():
+        _enginePtr = event.ptr;
+        _startProgressPolling();
+        notifyListeners();
       case DownloadDone():
         downloads.remove(event.name);
         if (event.name == vadModelName) _vadModelReady();
@@ -376,6 +415,7 @@ class AppState extends ChangeNotifier {
           ));
         }
         busy = false;
+        _stopProgressPolling();
         notifyListeners();
         start(); // drain the queue
       case TranscribeFailed():
@@ -385,6 +425,7 @@ class AppState extends ChangeNotifier {
           item.error = event.message;
         }
         busy = false;
+        _stopProgressPolling();
         notifyListeners();
         start();
       case FormatResult():

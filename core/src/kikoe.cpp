@@ -61,7 +61,7 @@ int kk_abi_version(void)
 
 const char* kk_version_string(void)
 {
-    return "1.3.0";
+    return "1.4.0";
 }
 
 const char* kk_error_string(int err)
@@ -156,6 +156,12 @@ int kk_download_model(const char* name, kk_progress_cb on_progress, void* user)
 void kk_cancel(kk_engine* engine)
 {
     if (engine && engine->engine) engine->engine->cancel();
+}
+
+int kk_last_progress(const kk_engine* engine)
+{
+    if (engine == nullptr || engine->engine == nullptr) return 0;
+    return engine->engine->progress_percent();
 }
 
 namespace {

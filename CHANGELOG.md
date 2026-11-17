@@ -5,6 +5,20 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.4.0
+
+A feature release focused on pipeline robustness and polishing the native path.
+
+### New features
+
+- **Live progress during transcription.** Both apps now poll `kk_last_progress()` (a new versioned C API with relaxed atomic reads, safe to call from any isolate) while the worker is blocked inside `whisper_full()`, instead of showing a static bar.
+- **Live progress in the Android notification.** The system progress indicator now updates from the same native poll, at parity with the in-app bar.
+- **Engine hand-off event.** Workers emit `engineReady` with the native engine pointer so the UI can poll safely without crossing isolate boundaries through raw memory.
+
+### Improvements
+
+- **Version consistency.** Tag, CLI banner, C API version, CMake project and both apps report 1.4.0.
+
 ## v1.3.0
 
 New features since v1.2.0: in-app transcript editor, history library, custom vocabulary hint, and a save button that no longer depends on the worker.

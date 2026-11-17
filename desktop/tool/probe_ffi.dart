@@ -77,7 +77,13 @@ void main() {
     return;
   }
 
-  // kk_transcribe (no callbacks; segments harvested after the call)
+  // kk_last_progress is polled by the apps; both before the call (expect 0)
+// and after it returns (expect 100).
+final lastProgress = lib.lookupFunction<Int32 Function(Pointer<Void>), int Function(Pointer<Void>)>(
+    'kk_last_progress');
+print('progress before transcribe: ${lastProgress(engine)}');
+
+// kk_transcribe (no callbacks; segments harvested after the call)
   final transcribe = lib.lookupFunction<
       Int32 Function(
           Pointer<Void>,
@@ -103,6 +109,7 @@ void main() {
 
   final rc = transcribe(engine, mediaPtr, options, nullptr, nullptr, nullptr);
   print('transcribe rc: $rc');
+  print('progress after transcribe: ${lastProgress(engine)}');
   calloc.free(options);
   calloc.free(mediaPtr);
   calloc.free(languagePtr);

@@ -24,6 +24,11 @@ class Ready extends TranscriberEvent {
   final String cacheDir;
 }
 
+class EngineReady extends TranscriberEvent {
+  const EngineReady(this.ptr);
+  final int ptr;
+}
+
 class FfiError extends TranscriberEvent {
   const FfiError(this.message);
   final String message;
@@ -164,6 +169,8 @@ TranscriberEvent? _eventFromMap(Map<String, dynamic> map) {
   switch (map['type']) {
     case 'ready':
       return Ready(map['abiVersion'] as int, map['cacheDir'] as String);
+    case 'engineReady':
+      return EngineReady(map['ptr'] as int);
     case 'ffiError':
       return FfiError(map['message'] as String);
     case 'downloadDone':
@@ -233,6 +240,10 @@ void _workerMain(SendPort readyPort) {
         engineThreads == nThreads &&
         engineUseGpu == useGpu &&
         engineVadModelPath == vadModelPath) {
+      if (events != null) {
+        // Keep the pointer fresh for the UI isolate's polling loop.
+        events!.send({'type': 'engineReady', 'ptr': engine.address});
+      }
       return;
     }
     if (engine != nullptr) {
@@ -260,6 +271,11 @@ void _workerMain(SendPort readyPort) {
     engineThreads = nThreads;
     engineUseGpu = useGpu;
     engineVadModelPath = vadModelPath;
+    // Let the UI isolate poll native progress directly through FFI; the
+    // engine is stable while the worker is blocked inside whisper_full.
+    if (events != null) {
+      events!.send({'type': 'engineReady', 'ptr': engine.address});
+    }
   }
 
   recv.listen((dynamic raw) {
