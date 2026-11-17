@@ -19,8 +19,14 @@ sealed class TranscriberEvent {
 }
 
 class Ready extends TranscriberEvent {
-  const Ready(this.abiVersion);
+  const Ready(this.abiVersion, this.cacheDir);
   final int abiVersion;
+  final String? cacheDir;
+}
+
+class EngineReady extends TranscriberEvent {
+  const EngineReady(this.ptr);
+  final int ptr;
 }
 
 class TranscribeProgress extends TranscriberEvent {
@@ -137,7 +143,9 @@ class Transcriber {
 TranscriberEvent? _eventFromMap(Map<String, dynamic> map) {
   switch (map['type']) {
     case 'ready':
-      return Ready(map['abiVersion'] as int);
+      return Ready(map['abiVersion'] as int, map['cacheDir'] as String?);
+    case 'engineReady':
+      return EngineReady(map['ptr'] as int);
     case 'transcribeProgress':
       return TranscribeProgress(map['id'] as String, map['percent'] as int);
     case 'segment':
@@ -195,6 +203,10 @@ void _workerMain(SendPort readyPort) {
         engineModelPath == modelPath &&
         engineThreads == nThreads &&
         engineVadModelPath == vadModelPath) {
+      if (events != null) {
+        // Keep the pointer fresh for the UI isolate's polling loop.
+        events!.send({'type': 'engineReady', 'ptr': engine.address});
+      }
       return;
     }
     if (engine != nullptr) {
@@ -221,6 +233,11 @@ void _workerMain(SendPort readyPort) {
     engineModelPath = modelPath;
     engineThreads = nThreads;
     engineVadModelPath = vadModelPath;
+    // Let the UI isolate poll native progress directly through FFI; the
+    // engine is stable while the worker is blocked inside whisper_full.
+    if (events != null) {
+      events!.send({'type': 'engineReady', 'ptr': engine.address});
+    }
   }
 
   recv.listen((dynamic raw) {

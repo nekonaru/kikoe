@@ -61,6 +61,7 @@ full product spec.
 | **On-device transcription** | The same C++ core over Dart FFI, decoding with MediaCodec, no FFmpeg needed |
 | **Silence filtering (VAD)** | Optional Silero VAD trims silent regions before transcription |
 | **Transcript editor** | Fix any mistake before saving; SRT/VTT timestamps stay valid |
+| **Live progress** | Native progress polled from kk_last_progress(), updates the bar and the notification |
 | **History** | Your last 50 transcriptions, on-device, reopen/share anytime |
 | **Custom vocabulary** | Bias names and product terms the model keeps mishearing |
 | **Share to Kikoe** | Share any audio or video from another app straight into Kikoe |
@@ -76,6 +77,7 @@ full product spec.
 | **Downloads/kikoe default** | Transcripts are saved into Downloads/kikoe out of the box; pick any folder, Reset returns to the default |
 | **Model management** | Download and verify models in-app |
 | **Transcript editor** | Per-segment editor before saving; SRT/VTT stays valid |
+| **Live progress** | Native progress polled from kk_last_progress(), shown per queue item |
 | **History** | Your last 50 transcriptions, export from there |
 | **Custom vocabulary** | Help the model learn your product and place names |
 

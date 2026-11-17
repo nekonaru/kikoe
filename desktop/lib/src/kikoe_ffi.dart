@@ -52,6 +52,9 @@ typedef KKTranscribe = int Function(
 typedef KKCancelNative = Void Function(Pointer<Void> engine);
 typedef KKCancel = void Function(Pointer<Void> engine);
 
+typedef KKLastProgressNative = Int32 Function(Pointer<Void> engine);
+typedef KKLastProgress = int Function(Pointer<Void> engine);
+
 typedef KKLastSegmentCountNative = Int32 Function(Pointer<Void> engine);
 typedef KKLastSegmentCount = int Function(Pointer<Void> engine);
 
@@ -161,6 +164,7 @@ class KikoeFFI {
     engineCreate = _lib.lookupFunction<KKEngineCreateNative, KKEngineCreate>('kk_engine_create');
     transcribe = _lib.lookupFunction<KKTranscribeNative, KKTranscribe>('kk_transcribe');
     cancel = _lib.lookupFunction<KKCancelNative, KKCancel>('kk_cancel');
+    lastProgress = _lib.lookupFunction<KKLastProgressNative, KKLastProgress>('kk_last_progress');
     lastSegmentCount = _lib.lookupFunction<KKLastSegmentCountNative, KKLastSegmentCount>('kk_last_segment_count');
     lastSegmentGet = _lib.lookupFunction<KKLastSegmentGetNative, KKLastSegmentGet>('kk_last_segment_get');
     formatLast = _lib.lookupFunction<KKFormatLastNative, KKFormatLast>('kk_format_last');
@@ -184,6 +188,7 @@ class KikoeFFI {
   late final KKEngineCreate engineCreate;
   late final KKTranscribe transcribe;
   late final KKCancel cancel;
+  late final KKLastProgress lastProgress;
   late final KKLastSegmentCount lastSegmentCount;
   late final KKLastSegmentGet lastSegmentGet;
   late final KKFormatLast formatLast;

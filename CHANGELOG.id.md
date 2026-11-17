@@ -5,6 +5,20 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.4.0
+
+Rilis fitur yang fokus pada kekokohan pipeline dan pemolesan jalur native.
+
+### Fitur baru
+
+- **Progres langsung saat transkripsi.** Kedua aplikasi sekarang melakukan polling `kk_last_progress()` (C API berversi baru dengan atomic read tanpa lock, aman dipanggil dari isolate mana pun) selama worker diblokir di dalam `whisper_full()`, bukan membiarkan progress bar statis.
+- **Progres langsung di notifikasi Android.** Indikator progres sistem kini mengikuti polling native yang sama, sejajar dengan bar di aplikasi.
+- **Event serah terima engine.** Worker mengirim `engineReady` yang membawa pointer engine native, sehingga UI bisa melakukan polling dengan aman tanpa menembus isolate lewat memori mentah.
+
+### Peningkatan
+
+- **Konsistensi versi.** Tag, banner CLI, versi C API, proyek CMake dan kedua aplikasi melapor 1.4.0.
+
 ## v1.3.0
 
 Fitur baru sejak v1.2.0: editor transkrip di dalam aplikasi, pustaka riwayat, custom vocabulary, dan save yang tidak lagi bergantung pada worker.

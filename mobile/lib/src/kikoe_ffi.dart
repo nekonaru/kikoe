@@ -63,6 +63,9 @@ typedef KKTranscribePcm = int Function(
 typedef KKCancelNative = Void Function(Pointer<Void> engine);
 typedef KKCancel = void Function(Pointer<Void> engine);
 
+typedef KKLastProgressNative = Int32 Function(Pointer<Void> engine);
+typedef KKLastProgress = int Function(Pointer<Void> engine);
+
 typedef KKLastSegmentCountNative = Int32 Function(Pointer<Void> engine);
 typedef KKLastSegmentCount = int Function(Pointer<Void> engine);
 
@@ -149,6 +152,7 @@ class KikoeFFI {
     transcribe = _lib.lookupFunction<KKTranscribeNative, KKTranscribe>('kk_transcribe');
     transcribePcm = _lib.lookupFunction<KKTranscribePcmNative, KKTranscribePcm>('kk_transcribe_pcm');
     cancel = _lib.lookupFunction<KKCancelNative, KKCancel>('kk_cancel');
+    lastProgress = _lib.lookupFunction<KKLastProgressNative, KKLastProgress>('kk_last_progress');
     lastSegmentCount =
         _lib.lookupFunction<KKLastSegmentCountNative, KKLastSegmentCount>('kk_last_segment_count');
     lastSegmentGet =
@@ -171,6 +175,7 @@ class KikoeFFI {
   late final KKTranscribe transcribe;
   late final KKTranscribePcm transcribePcm;
   late final KKCancel cancel;
+  late final KKLastProgress lastProgress;
   late final KKLastSegmentCount lastSegmentCount;
   late final KKLastSegmentGet lastSegmentGet;
   late final KKFormatLast formatLast;

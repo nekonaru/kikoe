@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #define KK_ABI_VERSION_MAJOR 0
-#define KK_ABI_VERSION_MINOR 1
+#define KK_ABI_VERSION_MINOR 2
 
 typedef struct kk_engine kk_engine;
 
@@ -74,7 +74,7 @@ typedef void (*kk_segment_cb)(const kk_segment* seg, void* user);
 /* Returns KK_ABI_VERSION_MAJOR * 100 + KK_ABI_VERSION_MINOR. */
 KK_API int kk_abi_version(void);
 
-/* Static, never NULL. For example "1.3.0". */
+/* Static, never NULL. For example "1.4.0". */
 KK_API const char* kk_version_string(void);
 
 /* kk_error codes. */
@@ -124,7 +124,10 @@ KK_API int kk_transcribe_pcm(kk_engine* engine,
 
 /* Request cancellation. May be called from any thread. The running
  * kk_transcribe() returns KK_ERR_CANCELLED at the next checkpoint. */
+KK_API /* kk_cancel may be called at any time. kk_last_progress returns 0-100 while a
+ * transcription is running (or 100 when done). Both are safe from any thread. */
 KK_API void kk_cancel(kk_engine* engine);
+KK_API int kk_last_progress(const kk_engine* engine);
 
 /* Number of segments from the last kk_transcribe() call. */
 KK_API int kk_last_segment_count(const kk_engine* engine);
