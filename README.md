@@ -2,7 +2,7 @@
   <img src="assets/brand/kikoe-tile.svg" alt="Kikoe logo" width="120" />
   <h1>Kikoe: Offline Audio/Video Transcription</h1>
   <p><b>Transcribe audio and video into text and subtitles entirely on your device,<br/>
-  with a CLI, a Windows desktop app and an Android app from one C++ core.</b></p>
+  with a CLI, desktop apps for Windows, Linux and macOS, and an Android app.</b></p>
 
   <a href="https://github.com/nekonaru/kikoe/releases"><img src="https://img.shields.io/github/v/release/nekonaru/kikoe?style=flat-square&color=blue" alt="Release" /></a>
   <a href="https://github.com/nekonaru/kikoe/actions/workflows/ci.yml"><img src="https://github.com/nekonaru/kikoe/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
@@ -68,7 +68,7 @@ full product spec.
 | **Progress notification** | Ongoing notification with progress while a job runs |
 | **Model management** | Download and remove models in-app; checksum verified after every download |
 
-### Desktop app (Windows)
+### Desktop app
 
 | Feature | Description |
 |---------|-------------|
@@ -143,13 +143,15 @@ full product spec.
    - `app-armeabi-v7a-release.apk` for older 32-bit Android devices
    - `app-x86_64-release.apk` for x86_64 emulators
    - `kikoe-windows-x64.zip` for the Windows desktop app
+   - `kikoe-linux-x64.tar.gz` for the Linux desktop app (extract and run the `kikoe_desktop` executable)
+   - `kikoe-macos-x64.zip` for the macOS desktop app (unzip, drag Kikoe to Applications; macOS will ask you to confirm the first launch)
    - `kikoe-cli-windows-latest.zip` (Windows), `kikoe-cli-macos-latest.zip` (macOS) or `kikoe-cli-ubuntu-latest.zip` (Linux) for the CLI
 3. Android: open the APK on your phone, allow installs from unknown sources if asked. Verify the certificate fingerprint in [SECURITY.md](SECURITY.md) before installing
-4. Windows desktop app: extract the zip and run `Kikoe.exe`
+4. Windows desktop app: extract the zip and run `Kikoe.exe`; Linux desktop: extract the tarball and run `./kikoe_desktop`; macOS desktop: unzip, run Kikoe and confirm at the Gatekeeper prompt
 5. CLI: put the binary on your PATH and run `kikoe --help`
 
 > [!IMPORTANT]
-> Android needs the "Install unknown apps" permission for the app you install with (browser or file manager), and the notification permission so the progress notification can appear. Nothing else is requested. The desktop app is not code-signed, so Windows SmartScreen will warn on first run; see the FAQ for why.
+> Android needs the "Install unknown apps" permission for the app you install with (browser or file manager), and the notification permission so the progress notification can appear. Nothing else is requested. The desktop apps are not code-signed; Windows SmartScreen and macOS Gatekeeper will warn on first run; see the FAQ for why.
 
 ### Option B: Build from source (for development)
 
@@ -201,6 +203,15 @@ cd desktop
 flutter pub get
 flutter build windows --release
 
+# Linux desktop app (Ubuntu 24.04 / APT required)
+sudo apt-get install -y ninja-build clang cmake pkg-config libgtk-3-dev libglib2.0-dev libblkid-dev liblzma-dev
+cd desktop
+flutter build linux --release
+
+# macOS desktop app
+cd desktop
+flutter build macos --release
+
 # Android app (needs JDK 17, Android SDK 37, NDK 28.2.13676358)
 cd mobile
 flutter pub get
@@ -250,7 +261,7 @@ kikoe/
 ├── core/                    # C++17 transcription core
 │   ├── include/kikoe.h      # versioned C API
 │   └── src/                 # engine, decoder, model manager, formatters
-├── desktop/                 # Windows desktop app (Flutter)
+├── desktop/                 # Desktop apps for Windows, Linux and macOS (Flutter)
 ├── mobile/                  # Android app (Flutter + Dart FFI, Kotlin MediaCodec)
 ├── scripts/                 # release notes builder
 ├── tests/                   # ctest suite (formatter, C API contract)
@@ -337,7 +348,7 @@ manifest disables backups and cleartext traffic.
 | Workflow | Purpose |
 |----------|---------|
 | `ci.yml` (Build and test) | Core build and ctest on Windows, macOS, Linux; CLI zip per OS |
-| `ci.yml` (Build desktop) | Windows desktop bundle `kikoe-windows-x64.zip` |
+| `ci.yml` (Build desktop) | Desktop bundles for Windows, Linux and macOS |
 | `ci.yml` (Build Android APK) | Release APKs, signed, split per ABI |
 | `ci.yml` (Release artifacts) | On `v*` tags, creates the GitHub Release with all artifacts |
 | `ci.yml` (Secret scan) | gitleaks on every push and pull request |
@@ -370,9 +381,9 @@ The signing certificate changed in v1.0.1. Uninstall the app installed from v1.0
 </details>
 
 <details>
-<summary><b>Why does Windows say the app is unverified?</b></summary>
+<summary><b>Why do the desktop apps warn on first run?</b></summary>
 
-The desktop bundle is not code-signed, so SmartScreen warns on first run. The artifacts are built by CI from public tagged commits; verify what you download against [SECURITY.md](SECURITY.md) and the release checksums.
+The desktop bundles are not code-signed (needs an Authenticode certificate for Windows and a Developer ID certificate for macOS, both of which cost money), so SmartScreen and Gatekeeper warn on first launch. You can install them without issue by clicking Run anyway / Open. The artifacts are built by CI from public tagged commits; verify the downloads in [SECURITY.md](SECURITY.md).
 
 </details>
 

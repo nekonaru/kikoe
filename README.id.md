@@ -2,7 +2,7 @@
   <img src="assets/brand/kikoe-tile.svg" alt="Logo Kikoe" width="120" />
   <h1>Kikoe: Transkripsi Audio/Video Offline</h1>
   <p><b>Transkripsikan audio dan video menjadi teks dan subtitle sepenuhnya di perangkatmu,<br/>
-  dengan CLI, aplikasi desktop Windows dan aplikasi Android dari satu core C++.</b></p>
+  dengan CLI, aplikasi desktop untuk Windows, Linux dan macOS, dan aplikasi Android.</b></p>
 
   <a href="https://github.com/nekonaru/kikoe/releases"><img src="https://img.shields.io/github/v/release/nekonaru/kikoe?style=flat-square&color=blue" alt="Release" /></a>
   <a href="https://github.com/nekonaru/kikoe/actions/workflows/ci.yml"><img src="https://github.com/nekonaru/kikoe/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
@@ -67,7 +67,7 @@ aplikasi Android. Tanpa akun, tanpa kuota, tanpa cloud. Lihat
 | **Notifikasi progres** | Notifikasi berjalan dengan progres selama proses berlangsung |
 | **Manajemen model** | Unduh dan hapus model di dalam aplikasi; checksum diverifikasi setiap unduhan |
 
-### Aplikasi desktop (Windows)
+### Aplikasi desktop
 
 | Fitur | Deskripsi |
 |-------|-----------|
@@ -141,13 +141,15 @@ aplikasi Android. Tanpa akun, tanpa kuota, tanpa cloud. Lihat
    - `app-armeabi-v7a-release.apk` untuk perangkat Android 32-bit lawas
    - `app-x86_64-release.apk` untuk emulator x86_64
    - `kikoe-windows-x64.zip` untuk aplikasi desktop Windows
+   - `kikoe-linux-x64.tar.gz` untuk aplikasi desktop Linux (ekstrak lalu jalankan `kikoe_desktop`)
+   - `kikoe-macos-x64.zip` untuk aplikasi desktop macOS (unzip, seret Kikoe ke Applications; macOS akan meminta konfirmasi pada pembukaan pertama)
    - `kikoe-cli-windows-latest.zip` (Windows), `kikoe-cli-macos-latest.zip` (macOS) atau `kikoe-cli-ubuntu-latest.zip` (Linux) untuk CLI
 3. Android: buka APK di ponselmu, izinkan instal dari sumber tidak dikenal bila diminta. Verifikasi sidik jari sertifikat di [SECURITY.md](SECURITY.md) sebelum memasang
-4. Aplikasi desktop Windows: ekstrak zip-nya lalu jalankan `Kikoe.exe`
+4. Aplikasi desktop Windows: ekstrak zip-nya lalu jalankan `Kikoe.exe`; Linux: ekstrak tarball-nya lalu jalankan `./kikoe_desktop`; macOS: unzip, jalankan Kikoe dan konfirmasi pada prompt Gatekeeper
 5. CLI: letakkan binarinya di PATH lalu jalankan `kikoe --help`
 
 > [!IMPORTANT]
-> Android memerlukan izin "Install unknown apps" untuk aplikasi yang kamu pakai memasang (browser atau file manager), dan izin notifikasi agar notifikasi progres bisa muncul. Tidak ada yang lain. Aplikasi desktop belum ditandatangani, jadi Windows SmartScreen akan memperingatkan saat pertama kali dijalankan; lihat FAQ.
+> Android memerlukan izin "Install unknown apps" untuk aplikasi yang kamu pakai memasang (browser atau file manager), dan izin notifikasi agar notifikasi progres bisa muncul. Tidak ada yang lain. Aplikasi desktop belum ditandatangani; Windows SmartScreen dan macOS Gatekeeper akan memperingatkan saat pertama kali dijalankan; lihat FAQ.
 
 ### Opsi B: Build dari source (untuk pengembangan)
 
@@ -199,6 +201,15 @@ cd desktop
 flutter pub get
 flutter build windows --release
 
+# Aplikasi desktop Linux (Ubuntu 24.04 / apt tersedia)
+sudo apt-get install -y ninja-build clang cmake pkg-config libgtk-3-dev libglib2.0-dev libblkid-dev liblzma-dev
+cd desktop
+flutter build linux --release
+
+# Aplikasi desktop macOS
+cd desktop
+flutter build macos --release
+
 # Aplikasi Android (membutuhkan JDK 17, Android SDK 37, NDK 28.2.13676358)
 cd mobile
 flutter pub get
@@ -248,7 +259,7 @@ kikoe/
 ├── core/                    # core transkripsi C++17
 │   ├── include/kikoe.h      # C API berversi
 │   └── src/                 # engine, decoder, manajer model, formatter
-├── desktop/                 # aplikasi desktop Windows (Flutter)
+├── desktop/                 # aplikasi desktop Windows, Linux dan macOS (Flutter)
 ├── mobile/                  # aplikasi Android (Flutter + Dart FFI, Kotlin MediaCodec)
 ├── scripts/                 # pembuat catatan rilis
 ├── tests/                   # suite ctest (formatter, kontrak C API)
@@ -335,7 +346,7 @@ release Android menonaktifkan backup dan cleartext traffic.
 | Workflow | Fungsi |
 |----------|--------|
 | `ci.yml` (Build and test) | Build core dan ctest di Windows, macOS, Linux; zip CLI per OS |
-| `ci.yml` (Build desktop) | Bundle desktop Windows `kikoe-windows-x64.zip` |
+| `ci.yml` (Build desktop) | Bundle desktop Windows, Linux dan macOS |
 | `ci.yml` (Build Android APK) | APK release, ditandatangani, split per ABI |
 | `ci.yml` (Release artifacts) | Pada tag `v*`, membuat GitHub Release dengan semua artefak |
 | `ci.yml` (Secret scan) | gitleaks pada setiap push dan pull request |
@@ -368,9 +379,9 @@ Sertifikat tanda tangan berubah di v1.0.1. Copot aplikasi yang terpasang dari v1
 </details>
 
 <details>
-<summary><b>Kenapa Windows bilang aplikasi belum diverifikasi?</b></summary>
+<summary><b>Kenapa aplikasi desktop memperingatkan saat pertama kali dibuka?</b></summary>
 
-Bundle desktop tidak ditandatangani, jadi SmartScreen memperingatkan saat pertama kali dijalankan. Artefak dibangun oleh CI dari commit tag publik; verifikasi unduhanmu ke [SECURITY.md](SECURITY.md) dan checksum release.
+Bundle desktop belum ditandatangani (butuh sertifikat Authenticode untuk Windows dan Developer ID untuk macOS, keduanya berbayar), jadi SmartScreen dan Gatekeeper memperingatkan saat pertama kali dijalankan. Tetap bisa dijalankan dengan klik Run anyway / Open. Artefak dibangun oleh CI dari commit tag publik; verifikasi unduhanmu di [SECURITY.md](SECURITY.md).
 
 </details>
 

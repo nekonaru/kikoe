@@ -5,6 +5,21 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.5.0
+
+Rilis yang fokus pada distribusi: aplikasi desktop Linux dan macOS bergabung dengan Windows; rilis publik kini menjangkau semua platform desktop utama dari satu core C++.
+
+### Fitur baru
+
+- **Aplikasi desktop Linux.** Bundle `kikoe-linux-x64.tar.gz` baru dengan binary GTK `kikoe_desktop`; Flutter + FFI, antrean seret-lepas yang sama, model yang sama, kontrak folder keluaran yang sama.
+- **Aplikasi desktop macOS.** Zip `kikoe-macos-x64.zip` baru berisi `Kikoe.app` (Swift runner, Flutter + FFI). Paritas penuh dengan aplikasi Windows pada CI rilis.
+- **Entitlement sandbox macOS.** Profil Release dan Debug sekarang memberi `network.client`, `files.user-selected.read-write` dan `files.downloads.read-write`, sehingga unduhan model, pemilihan file, dan penyimpanan bekerja dari dalam sandbox.
+
+### Peningkatan
+
+- **CI rilis mengirim bundle desktop Linux dan macOS** bersama Windows; catatan rilis dan README kini mencakup keempat platform.
+- **Dokumen dan FAQ mencerminkan platform baru.** Instalasi, build, tabel CI, FAQ tentang peringatan bundle desktop, pohon struktur proyek, dan kebijakan privasi diperbarui dan dijaga sinkron EN/ID.
+
 ## v1.4.0
 
 Rilis fitur yang fokus pada kekokohan pipeline dan pemolesan jalur native.
