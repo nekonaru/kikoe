@@ -2,6 +2,7 @@
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
 import 'src/about_screen.dart';
@@ -90,16 +91,31 @@ class _KikoeHomeState extends State<KikoeHome> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: s,
-      builder: (context, _) {
-        return Scaffold(
-          body: Column(
-            children: [
-              _Header(state: s),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.keyO, control: true): _pickFiles,
+        const SingleActivator(LogicalKeyboardKey.keyO, meta: true): _pickFiles,
+        const SingleActivator(LogicalKeyboardKey.enter, control: true): () {
+          if (s.items.any((i) => i.status == QueueStatus.pending)) s.start();
+        },
+        const SingleActivator(LogicalKeyboardKey.enter, meta: true): () {
+          if (s.items.any((i) => i.status == QueueStatus.pending)) s.start();
+        },
+        const SingleActivator(LogicalKeyboardKey.escape, control: true): s.cancelCurrent,
+        const SingleActivator(LogicalKeyboardKey.escape, meta: true): s.cancelCurrent,
+      },
+      child: Focus(
+        autofocus: true,
+        child: AnimatedBuilder(
+          animation: s,
+          builder: (context, _) {
+            return Scaffold(
+              body: Column(
+                children: [
+                  _Header(state: s),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _ControlPanel(
                       state: s,
@@ -111,12 +127,14 @@ class _KikoeHomeState extends State<KikoeHome> {
                     ),
                   ],
                 ),
+                  ),
+                  _StatusBar(state: s),
+                ],
               ),
-              _StatusBar(state: s),
-            ],
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 }

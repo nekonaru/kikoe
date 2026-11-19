@@ -41,6 +41,8 @@ class FaqScreen extends StatelessWidget {
         'Open a GitHub issue with the file type, the model, what you expected and what happened. For security issues, do not open a public issue: use the private reporting route in SECURITY.md.'),
     _Faq('Is Kikoe free for commercial use?',
         'Yes. Kikoe is MIT licensed. Use it at work, in your business, in your own products. Keep the copyright notice if you redistribute binaries.'),
+    _Faq('Are there keyboard shortcuts?',
+        'Yes, desktop only: Ctrl+O picks files, Ctrl+Enter starts the queue, Esc cancels the running transcription.'),
     _Faq('How do I support the project?',
         'Star it on GitHub, and if Kikoe saved you hours, sponsor via GitHub Sponsors, Saweria, SociaBuzz or BagiBagi. Links are in About > Sponsor Kikoe.'),
     _Faq('What does Filter silence (VAD) do?',

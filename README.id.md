@@ -407,7 +407,13 @@ Ke folder Downloads/kikoe di perangkatmu, secara default. Aplikasi desktop bisa 
 </details>
 
 <details>
-<summary><b>Bagaimana cara mendukung Kikoe?</b></summary>
+<summary><b>Apakah ada pintasan keyboard?</b></summary>
+
+Ada, khusus desktop: Ctrl+O memilih file, Ctrl+Enter memulai antrean, Esc membatalkan transkripsi yang sedang berjalan.
+
+</details>
+
+Bagaimana cara mendukung Kikoe?
 
 Beri bintang di GitHub, atau sponsor lewat GitHub Sponsors, Saweria, SociaBuzz atau BagiBagi. Tautannya ada di About (ikon info) di kedua aplikasi: About > Sponsor Kikoe.
 

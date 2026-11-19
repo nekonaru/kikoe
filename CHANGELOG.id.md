@@ -5,6 +5,20 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.6.0
+
+Rilis pemolesan native: pintasan keyboard desktop, pembersihan audit dan verifikasi CI ke depannya.
+
+### Fitur baru
+
+- **Pintasan keyboard desktop.** Ctrl/Cmd+O memilih file, Ctrl/Cmd+Enter memulai antrean, Esc membatalkan transkripsi yang sedang berjalan. Pintasan bekerja di seluruh tampilan antrean dan panel kontrol.
+- **Pintasan About tetap membuka dari ikon app bar; pintasan keyboard kini didokumentasikan di FAQ.**
+
+### Peningkatan
+
+- **HOMEPAGE_URL di CMake desktop mengarah ke repositori yang benar** (`https://github.com/nekonaru/kikoe`).
+- **build.gradle.kts Android bersih** (TODO template dihapus; application ID sudah benar untuk produksi).
+
 ## v1.5.0
 
 Rilis yang fokus pada distribusi: aplikasi desktop Linux dan macOS bergabung dengan Windows; rilis publik kini menjangkau semua platform desktop utama dari satu core C++.
