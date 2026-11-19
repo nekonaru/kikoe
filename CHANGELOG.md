@@ -5,6 +5,20 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.6.0
+
+A native-polish release: desktop keyboard shortcuts, audit cleanup and CI verification going forward.
+
+### New features
+
+- **Desktop keyboard shortcuts.** Ctrl/Cmd+O picks files, Ctrl/Cmd+Enter starts the queue, Esc cancels the current transcription. The window always has focus so shortcuts work inside the queue and the control panel alike.
+- **In-app About shortcut still opens from the app bar icon; keyboard shortcuts are now documented in the FAQ.**
+
+### Improvements
+
+- **Desktop CMake HOMEPAGE_URL points at the real repository** (`https://github.com/nekonaru/kikoe`).
+- **Android build.gradle.kts literal kept** (template TODO removed; application ID already correct for production).
+
 ## v1.5.0
 
 A distribution-focused release: Linux and macOS desktop apps join Windows, and the apps release now reaches every major desktop platform from one C++ core.

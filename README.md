@@ -409,7 +409,13 @@ Into the Downloads/kikoe folder on your device, by default. The desktop app can 
 </details>
 
 <details>
-<summary><b>How do I support Kikoe?</b></summary>
+<summary><b>Are there keyboard shortcuts?</b></summary>
+
+Yes, desktop only: Ctrl+O picks files, Ctrl+Enter starts the queue, Esc cancels the running transcription.
+
+</details>
+
+How do I support Kikoe?
 
 Star it on GitHub, or sponsor via GitHub Sponsors, Saweria, SociaBuzz or BagiBagi. Links live in About (the info icon) in both apps: About > Sponsor Kikoe.
 
