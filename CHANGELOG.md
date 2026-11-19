@@ -5,6 +5,21 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.5.0
+
+A distribution-focused release: Linux and macOS desktop apps join Windows, and the apps release now reaches every major desktop platform from one C++ core.
+
+### New features
+
+- **Linux desktop app.** New `kikoe-linux-x64.tar.gz` bundle with the `kikoe_desktop` GTK binary; Flutter + FFI, same drag & drop queue, same models, same output folder contract.
+- **macOS desktop app.** New `kikoe-macos-x64.zip` with the `Kikoe.app` (Swift runner, Flutter + FFI). Reached full parity with the Windows app on the release CI.
+- **macOS sandbox entitlements.** Release and debug profiles now grant `network.client`, `files.user-selected.read-write` and `files.downloads.read-write`, so model downloads, input picking and saving work out of the sandbox.
+
+### Improvements
+
+- **Release CI ships Linux and macOS desktop bundles** alongside Windows; release notes and README now cover all four platforms.
+- **Docs and FAQ reflect the new platforms.** Install, build, CI table, desktop bundle warning FAQ, project tree and privacy policy are updated and kept EN/ID in sync.
+
 ## v1.4.0
 
 A feature release focused on pipeline robustness and polishing the native path.
