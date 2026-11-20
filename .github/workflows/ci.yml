@@ -265,19 +265,19 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download CLI artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           pattern: kikoe-cli-*
 
       - name: Download desktop bundles
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           pattern: kikoe-*-x64
 
       - name: Download Android APKs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           pattern: kikoe-android-apks
