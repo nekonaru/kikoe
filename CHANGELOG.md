@@ -5,6 +5,20 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.7.0
+
+A convenience and desktop-integration release: save finished transcripts without an extra tap, a real CLI --version, and a Linux app-menu launcher.
+
+### New features
+
+- **Save automatically.** Optional, persisted setting. When enabled, a finished transcription is written immediately to the output folder (SRT on mobile, the chosen save format on desktop). Off by default.
+- **CLI `--version`.** Prints `kikoe 1.7.0` and exits; no model or media needed.
+- **Linux launcher.** The Linux bundle now ships a freedesktop `kikoe.desktop` file and a 512x512 icon, so Kikoe appears in GNOME/KDE application menus after copying two files into the user's local share directory.
+
+### Improvements
+
+- Version string is consistent across CLI --version, --help, C API, CMake and both app manifests.
+
 ## v1.6.0
 
 A native-polish release: desktop keyboard shortcuts, audit cleanup and CI verification going forward.

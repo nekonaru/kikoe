@@ -720,6 +720,15 @@ class _OptionsSection extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 4),
+          SwitchListTile(
+            value: state.autoSave,
+            onChanged: state.setAutoSave,
+            title: const Text('Save automatically'),
+            subtitle: const Text('SRT goes to Downloads/kikoe when done',
+                style: TextStyle(fontSize: 11)),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
           _PromptField(state: state),
           if (state.downloadPercentOf('vad-silero') != null)
             Padding(

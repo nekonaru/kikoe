@@ -72,6 +72,7 @@ void print_usage(const char* argv0)
         "  --model NAME|PATH  Model: registry name (tiny, base, small, medium,\n"
         "                     large, ...) or a path to a .bin file\n"
         "                     (default: small; auto-downloaded is not attempted)\n"
+        "  --version          Print the version and exit\n"
         "  --lang LANG        Language code (id, en, ...) or 'auto' (default: auto)\n"
         "  --threads N        Worker threads (default: min(4, hardware))\n"
         "  --gpu              Use GPU through a whisper.cpp GPU backend\n"
@@ -85,7 +86,7 @@ void print_usage(const char* argv0)
         "  --outdir DIR       Write <name>.<fmt> files into DIR\n"
         "  -h, --help         Show this help\n\n"
         "Model cache: %s\n",
-        "1.6.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
+        "1.7.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
 }
 
 void print_error(kikoe::ErrorCode code)
@@ -106,6 +107,7 @@ struct Cli {
     bool gpu = false;
     bool vad = false;
     bool list_models = false;
+    bool show_version = false;
     std::string download_model;
 };
 
@@ -177,6 +179,7 @@ bool parse_cli(int argc, char** argv, Cli& cli)
             return argv[++i];
         };
         if (arg == "-h" || arg == "--help") return false;
+        else if (arg == "--version") cli.show_version = true;
         else if (arg == "--list-models") cli.list_models = true;
         else if (arg == "--download-model") { const char* v = next(); if (!v) return false; cli.download_model = v; }
         else if (arg == "--model")  { const char* v = next(); if (!v) return false; cli.model = v; }
@@ -250,6 +253,11 @@ int main(int argc, char** argv)
     if (!parse_cli(argc, argv, cli)) {
         print_usage(argv[0]);
         return argc < 2 ? 1 : 0;
+    }
+
+    if (cli.show_version) {
+        std::fprintf(stdout, "kikoe %s\n", "1.7.0");
+        return 0;
     }
 
     if (cli.list_models) {

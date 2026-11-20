@@ -141,7 +141,7 @@ aplikasi Android. Tanpa akun, tanpa kuota, tanpa cloud. Lihat
    - `app-armeabi-v7a-release.apk` untuk perangkat Android 32-bit lawas
    - `app-x86_64-release.apk` untuk emulator x86_64
    - `kikoe-windows-x64.zip` untuk aplikasi desktop Windows
-   - `kikoe-linux-x64.tar.gz` untuk aplikasi desktop Linux (ekstrak lalu jalankan `kikoe_desktop`)
+   - `kikoe-linux-x64.tar.gz` untuk aplikasi desktop Linux (ekstrak, jalankan `kikoe_desktop`; opsional: salin `share/applications/kikoe.desktop` ke `~/.local/share/applications/` dan `share/icons/.../kikoe.png` ke `~/.local/share/icons/hicolor/512x512/apps/` agar muncul di menu aplikasi)
    - `kikoe-macos-x64.zip` untuk aplikasi desktop macOS (unzip, seret Kikoe ke Applications; macOS akan meminta konfirmasi pada pembukaan pertama)
    - `kikoe-cli-windows-latest.zip` (Windows), `kikoe-cli-macos-latest.zip` (macOS) atau `kikoe-cli-ubuntu-latest.zip` (Linux) untuk CLI
 3. Android: buka APK di ponselmu, izinkan instal dari sumber tidak dikenal bila diminta. Verifikasi sidik jari sertifikat di [SECURITY.md](SECURITY.md) sebelum memasang

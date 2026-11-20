@@ -5,6 +5,20 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.7.0
+
+Rilis kenyamanan dan integrasi desktop: simpan transkrip tanpa klik tambahan, `--version` asli di CLI, dan launcher menu aplikasi Linux.
+
+### Fitur baru
+
+- **Simpan otomatis.** Opsi yang tersimpan. Saat aktif, transkrip yang selesai langsung ditulis ke folder keluaran (SRT di mobile, format pilihan di desktop). Nonaktif secara default.
+- **CLI `--version`.** Mencetak `kikoe 1.7.0` lalu keluar; tidak butuh model maupun media.
+- **Launcher Linux.** Bundle Linux kini menyertakan file freedesktop `kikoe.desktop` dan ikon 512x512, agar Kikoe muncul di menu aplikasi GNOME/KDE setelah menyalin dua file ke direktori share pengguna.
+
+### Peningkatan
+
+- String versi konsisten di CLI --version, --help, C API, CMake dan manifest kedua aplikasi.
+
 ## v1.6.0
 
 Rilis pemolesan native: pintasan keyboard desktop, pembersihan audit dan verifikasi CI ke depannya.

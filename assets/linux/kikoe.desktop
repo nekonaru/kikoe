@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Kikoe
+GenericName=Offline Transcription
+Comment=Free, unlimited, offline audio and video transcription
+Exec=kikoe_desktop %F
+Icon=kikoe
+Terminal=false
+Categories=AudioVideo;Audio;Video;
+MimeType=audio/x-wav;audio/mpeg;audio/mp4;audio/flac;audio/ogg;audio/x-ms-wma;video/mp4;video/x-matroska;video/quicktime;video/webm;video/x-msvideo;
+StartupNotify=true
