@@ -143,7 +143,7 @@ full product spec.
    - `app-armeabi-v7a-release.apk` for older 32-bit Android devices
    - `app-x86_64-release.apk` for x86_64 emulators
    - `kikoe-windows-x64.zip` for the Windows desktop app
-   - `kikoe-linux-x64.tar.gz` for the Linux desktop app (extract and run the `kikoe_desktop` executable)
+   - `kikoe-linux-x64.tar.gz` for the Linux desktop app (extract, run `kikoe_desktop`; optional: copy `share/applications/kikoe.desktop` into `~/.local/share/applications/` and `share/icons/.../kikoe.png` into `~/.local/share/icons/hicolor/512x512/apps/` so it shows up in your app menu)
    - `kikoe-macos-x64.zip` for the macOS desktop app (unzip, drag Kikoe to Applications; macOS will ask you to confirm the first launch)
    - `kikoe-cli-windows-latest.zip` (Windows), `kikoe-cli-macos-latest.zip` (macOS) or `kikoe-cli-ubuntu-latest.zip` (Linux) for the CLI
 3. Android: open the APK on your phone, allow installs from unknown sources if asked. Verify the certificate fingerprint in [SECURITY.md](SECURITY.md) before installing

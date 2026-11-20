@@ -16,10 +16,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Kikoe'), findsOneWidget);
-    expect(find.text('Add files…'), findsOneWidget);
-    // No model is cached in the test environment, so the start button
-    // asks to download the model first.
-    expect(find.text('Download the model first'), findsOneWidget);
+    expect(find.text('Save automatically'), findsOneWidget);
     expect(find.textContaining('Drop audio or video files here'), findsOneWidget);
     expect(find.text('No files queued'), findsOneWidget);
   });

@@ -128,6 +128,10 @@ jobs:
         run: |
           bundle="desktop/build/linux/x64/release/bundle"
           cp build/libkikoe_ffi.so "$bundle/lib/"
+          # Ship a freedesktop launcher and icon so Kikoe shows up in app menus.
+          mkdir -p "$bundle/share/applications" "$bundle/share/icons/hicolor/512x512/apps"
+          cp assets/linux/kikoe.desktop "$bundle/share/applications/"
+          cp assets/brand/variants/kikoe-symbol-app-icon-512.png "$bundle/share/icons/hicolor/512x512/apps/kikoe.png"
           tar -C "$bundle" -czf kikoe-linux-x64.tar.gz .
 
       - name: Bundle FFI (macOS)

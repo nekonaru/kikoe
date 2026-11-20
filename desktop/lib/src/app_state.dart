@@ -35,6 +35,7 @@ class AppState extends ChangeNotifier {
   bool useGpu = false;
   String saveFormat = 'srt';
   String initialPrompt = '';
+  bool autoSave = false; // save each finished transcript in saveFormat
   bool useVad = false;
 
   /// null = default (Downloads/kikoe on Windows, ~/Downloads/kikoe elsewhere).
@@ -167,6 +168,7 @@ class AppState extends ChangeNotifier {
   static const _kPrefsOutDir = 'kikoe_outdir';
   static const _kPrefsVad = 'kikoe_vad';
   static const _kPrefsPrompt = 'kikoe_initial_prompt';
+  static const _kPrefsAutoSave = 'kikoe_auto_save';
 
   Future<void> _loadSettings() async {
     try {
@@ -178,6 +180,7 @@ class AppState extends ChangeNotifier {
       useGpu = prefs.getBool(_kPrefsGpu) ?? useGpu;
       saveFormat = prefs.getString(_kPrefsFormat) ?? saveFormat;
       useVad = prefs.getBool(_kPrefsVad) ?? useVad;
+      autoSave = prefs.getBool(_kPrefsAutoSave) ?? autoSave;
       initialPrompt = prefs.getString(_kPrefsPrompt) ?? initialPrompt;
       final custom = prefs.getString(_kPrefsOutDir);
       if (custom != null && custom.isNotEmpty) customOutDir = custom;
@@ -197,6 +200,7 @@ class AppState extends ChangeNotifier {
       await prefs.setBool(_kPrefsGpu, useGpu);
       await prefs.setString(_kPrefsFormat, saveFormat);
       await prefs.setBool(_kPrefsVad, useVad);
+      await prefs.setBool(_kPrefsAutoSave, autoSave);
       if (initialPrompt.isEmpty) {
         await prefs.remove(_kPrefsPrompt);
       } else {
@@ -343,6 +347,12 @@ class AppState extends ChangeNotifier {
     _saveSettings();
   }
 
+  void setAutoSave(bool value) {
+    autoSave = value;
+    notifyListeners();
+    _saveSettings();
+  }
+
   void setInitialPrompt(String value) {
     initialPrompt = value;
     notifyListeners();
@@ -413,6 +423,7 @@ class AppState extends ChangeNotifier {
                 .map((s) => RenderSegment(s.startMs, s.endMs, s.text))
                 .toList(),
           ));
+          if (autoSave) saveItem(item, saveFormat);
         }
         busy = false;
         _stopProgressPolling();

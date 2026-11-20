@@ -66,6 +66,7 @@ class AppState extends ChangeNotifier {
   bool translate = false;
   bool useVad = false;
   String initialPrompt = '';
+  bool autoSave = false;
 
   // Model cache.
   String? modelsDir;
@@ -167,6 +168,7 @@ class AppState extends ChangeNotifier {
   static const _kPrefsTranslate = 'kikoe_translate';
   static const _kPrefsVad = 'kikoe_vad';
   static const _kPrefsPrompt = 'kikoe_initial_prompt';
+  static const _kPrefsAutoSave = 'kikoe_auto_save';
 
   Future<void> _loadSettings() async {
     try {
@@ -176,6 +178,7 @@ class AppState extends ChangeNotifier {
       translate = prefs.getBool(_kPrefsTranslate) ?? translate;
       useVad = prefs.getBool(_kPrefsVad) ?? useVad;
       initialPrompt = prefs.getString(_kPrefsPrompt) ?? initialPrompt;
+      autoSave = prefs.getBool(_kPrefsAutoSave) ?? autoSave;
       notifyListeners();
     } catch (_) {
       // Preferences are best-effort; defaults are fine.
@@ -189,6 +192,7 @@ class AppState extends ChangeNotifier {
       await prefs.setString(_kPrefsLanguage, language);
       await prefs.setBool(_kPrefsTranslate, translate);
       await prefs.setBool(_kPrefsVad, useVad);
+      await prefs.setBool(_kPrefsAutoSave, autoSave);
       if (initialPrompt.isEmpty) {
         await prefs.remove(_kPrefsPrompt);
       } else {
@@ -307,6 +311,12 @@ class AppState extends ChangeNotifier {
 
   void setTranslate(bool value) {
     translate = value;
+    notifyListeners();
+    _saveSettings();
+  }
+
+  void setAutoSave(bool value) {
+    autoSave = value;
     notifyListeners();
     _saveSettings();
   }
@@ -503,6 +513,7 @@ class AppState extends ChangeNotifier {
               .map((s) => RenderSegment(s.startMs, s.endMs, s.text))
               .toList(),
         ));
+        if (autoSave) saveTranscription('srt', (_) {});
         notifyListeners();
       case TranscribeFailed():
         stage = event.cancelled ? JobStage.cancelled : JobStage.failed;
