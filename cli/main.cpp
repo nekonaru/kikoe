@@ -2,7 +2,7 @@
  * Kikoe CLI.
  *
  * Inputs: WAV natively (any PCM/float encoding), everything else through
- * FFmpeg as a child process. Outputs: txt, srt, vtt, json. Supports batch
+ * FFmpeg as a child process. Outputs: txt, srt, vtt, json, md, csv. Supports batch
  * (multiple inputs) and model management (--list-models, --download-model).
  */
 #include "../core/src/audio/media_pcm.h"
@@ -80,13 +80,13 @@ void print_usage(const char* argv0)
         "  --vad              Filter silence with Silero VAD (auto-downloads vad-silero)\n"
         "  --translate        Translate speech to English instead of transcribing\n"
         "  --prompt TEXT      Initial prompt / custom vocabulary hint\n"
-        "  --format FMTS      Comma separated output formats: txt, srt, vtt, json\n"
+        "  --format FMTS      Comma separated output formats: txt, srt, vtt, json, md, csv\n"
         "                     (default: txt, or derived from -o)\n"
         "  -o, --output FILE  Write to FILE (single format, single input)\n"
         "  --outdir DIR       Write <name>.<fmt> files into DIR\n"
         "  -h, --help         Show this help\n\n"
         "Model cache: %s\n",
-        "1.7.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
+        "1.8.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
 }
 
 void print_error(kikoe::ErrorCode code)
@@ -204,7 +204,7 @@ bool parse_cli(int argc, char** argv, Cli& cli)
     }
 
     if (!formats_csv.empty() && !parse_formats(formats_csv, cli.formats)) {
-        std::fprintf(stderr, "kikoe: unknown --format value (expected txt, srt, vtt or json)\n");
+        std::fprintf(stderr, "kikoe: unknown --format value (expected txt, srt, vtt, json, md or csv)\n");
         return false;
     }
     if (cli.formats.empty()) {
@@ -256,7 +256,7 @@ int main(int argc, char** argv)
     }
 
     if (cli.show_version) {
-        std::fprintf(stdout, "kikoe %s\n", "1.7.0");
+        std::fprintf(stdout, "kikoe %s\n", "1.8.0");
         return 0;
     }
 

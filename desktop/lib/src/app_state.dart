@@ -103,7 +103,7 @@ class AppState extends ChangeNotifier {
     'ar', 'tr', 'de', 'es', 'fr', 'it', 'pt', 'ru', 'hi', 'nl', 'pl',
   ];
 
-  static const List<String> formats = ['srt', 'txt', 'vtt', 'json'];
+  static const List<String> formats = ['srt', 'txt', 'vtt', 'json', 'md', 'csv'];
 
   ModelEntry? get selectedModel => findModel(modelName);
 

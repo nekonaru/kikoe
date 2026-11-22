@@ -5,6 +5,20 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.8.0
+
+A format and verification release: two new export formats and CI that finally checks a real transcription.
+
+### New features
+
+- **Markdown export (`md`).** Transcript with timestamps as a readable Markdown document, for notes and publishing.
+- **CSV export (`csv`).** `index,start_ms,end_ms,text` with RFC-style quoting, for spreadsheets and subtitle tooling.
+
+### Improvements
+
+- **CI end-to-end transcription.** A new Ubuntu step downloads the tiny-q5_1 model, transcribes the bundled JFK sample and asserts the expected text, so a merge is never green on `--help` alone.
+- `--help`/`--version` and both apps' format pickers now list all six output formats.
+
 ## v1.7.0
 
 A convenience and desktop-integration release: save finished transcripts without an extra tap, a real CLI --version, and a Linux app-menu launcher.

@@ -109,6 +109,26 @@ String renderJson(List<RenderSegment> segments) {
   return out.toString();
 }
 
+String renderMd(List<RenderSegment> segments) {
+  final out = StringBuffer()..writeln('# Transcript\n');
+  for (final s in segments) {
+    final t = _trim(s.text);
+    if (t.isEmpty) continue;
+    out.writeln('**${_timestamp(s.startMs, msSep: '.')}** $t\n');
+  }
+  return out.toString();
+}
+
+String renderCsv(List<RenderSegment> segments) {
+  final out = StringBuffer()..writeln('index,start_ms,end_ms,text');
+  var i = 1;
+  for (final s in segments) {
+    final escaped = _trim(s.text).replaceAll('"', '""');
+    out.writeln('${i++},${s.startMs},${s.endMs},"$escaped"');
+  }
+  return out.toString();
+}
+
 String renderFormat(List<RenderSegment> segments, String format) {
   switch (format) {
     case 'txt':
@@ -119,6 +139,10 @@ String renderFormat(List<RenderSegment> segments, String format) {
       return renderVtt(segments);
     case 'json':
       return renderJson(segments);
+    case 'md':
+      return renderMd(segments);
+    case 'csv':
+      return renderCsv(segments);
     default:
       throw ArgumentError('unknown format: $format');
   }

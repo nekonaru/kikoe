@@ -40,6 +40,8 @@ class HistoryEntry {
   String srt() => renderSrt(segments);
   String vtt() => renderVtt(segments);
   String json() => renderJson(segments);
+  String md() => renderMd(segments);
+  String csv() => renderCsv(segments);
 }
 
 class HistoryStore {

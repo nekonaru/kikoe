@@ -138,7 +138,7 @@ class AppState extends ChangeNotifier {
     'ar', 'de', 'es', 'fr', 'pt', 'ru', 'hi',
   ];
 
-  static const List<String> formats = ['srt', 'txt', 'vtt', 'json'];
+  static const List<String> formats = ['srt', 'txt', 'vtt', 'json', 'md', 'csv'];
 
   Future<void> ensureStarted() async {
     await _loadSettings();
