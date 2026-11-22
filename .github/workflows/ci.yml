@@ -63,7 +63,7 @@ jobs:
           Compress-Archive -Path "$dir/*" -DestinationPath $zip
 
       - name: Upload CLI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: kikoe-cli-${{ matrix.os }}
           path: kikoe-cli-${{ matrix.os }}.zip
@@ -152,7 +152,7 @@ jobs:
 
       - name: Upload desktop artifact (Windows)
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: kikoe-windows-x64
           path: kikoe-windows-x64.zip
@@ -160,7 +160,7 @@ jobs:
 
       - name: Upload desktop artifact (Linux)
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: kikoe-linux-x64
           path: kikoe-linux-x64.tar.gz
@@ -168,7 +168,7 @@ jobs:
 
       - name: Upload desktop artifact (macOS)
         if: matrix.os == 'macos-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: kikoe-macos-x64
           path: kikoe-macos-x64.zip
@@ -254,7 +254,7 @@ jobs:
           done
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: kikoe-android-apks
           path: mobile/build/app/outputs/flutter-apk/*-release.apk
