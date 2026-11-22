@@ -5,6 +5,20 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.8.0
+
+Rilis format dan verifikasi: dua format ekspor baru dan CI yang akhirnya memeriksa transkripsi sungguhan.
+
+### Fitur baru
+
+- **Ekspor Markdown (`md`).** Transkrip dengan timestamp sebagai dokumen Markdown yang mudah dibaca, untuk catatan dan publikasi.
+- **Ekspor CSV (`csv`).** `index,start_ms,end_ms,text` dengan pengutipan ala RFC, untuk spreadsheet dan alat subtitle.
+
+### Peningkatan
+
+- **CI transkripsi end-to-end.** Langkah Ubuntu baru mengunduh model tiny-q5_1, mentranskrip sampel JFK yang disertakan, dan memeriksa teks yang diharapkan, sehingga merge tidak pernah hijau hanya karena `--help`.
+- `--help`/`--version` dan pemilih format kedua aplikasi kini mencantumkan keenam format keluaran.
+
 ## v1.7.0
 
 Rilis kenyamanan dan integrasi desktop: simpan transkrip tanpa klik tambahan, `--version` asli di CLI, dan launcher menu aplikasi Linux.

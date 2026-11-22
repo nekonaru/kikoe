@@ -74,7 +74,7 @@ typedef void (*kk_segment_cb)(const kk_segment* seg, void* user);
 /* Returns KK_ABI_VERSION_MAJOR * 100 + KK_ABI_VERSION_MINOR. */
 KK_API int kk_abi_version(void);
 
-/* Static, never NULL. For example "1.7.0". */
+/* Static, never NULL. For example "1.8.0". */
 KK_API const char* kk_version_string(void);
 
 /* kk_error codes. */

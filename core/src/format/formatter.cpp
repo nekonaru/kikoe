@@ -71,6 +71,8 @@ bool parse_format(const std::string& name, OutputFormat& out)
     if (lower == "srt")  { out = OutputFormat::Srt;  return true; }
     if (lower == "vtt")  { out = OutputFormat::Vtt;  return true; }
     if (lower == "json") { out = OutputFormat::Json; return true; }
+    if (lower == "md" || lower == "markdown") { out = OutputFormat::Md; return true; }
+    if (lower == "csv") { out = OutputFormat::Csv; return true; }
     return false;
 }
 
@@ -81,6 +83,8 @@ const char* format_extension(OutputFormat format)
     case OutputFormat::Srt:  return "srt";
     case OutputFormat::Vtt:  return "vtt";
     case OutputFormat::Json: return "json";
+    case OutputFormat::Md:   return "md";
+    case OutputFormat::Csv:  return "csv";
     }
     return "txt";
 }
@@ -129,6 +133,32 @@ std::string format_segments(const SegmentList& segments, OutputFormat format)
             out << '\n';
         }
         out << "  ]\n}\n";
+        return out.str();
+    }
+    case OutputFormat::Md: {
+        std::ostringstream out;
+        out << "# Transcript\n\n";
+        for (const auto& s : segments) {
+            const std::string text = trim_copy(s.text);
+            if (text.empty()) continue;
+            out << "**" << timestamp(s.start_ms, '.') << "** " << text << "\n\n";
+        }
+        return out.str();
+    }
+    case OutputFormat::Csv: {
+        std::ostringstream out;
+        out << "index,start_ms,end_ms,text\n";
+        size_t i = 1;
+        for (const auto& s : segments) {
+            std::string text = trim_copy(s.text);
+            std::string escaped;
+            for (char c : text) {
+                if (c == '"') escaped += "\"\"";
+                else escaped += c;
+            }
+            out << i++ << ',' << s.start_ms << ',' << s.end_ms
+                << ",\"" << escaped << "\"\n";
+        }
         return out.str();
     }
     }

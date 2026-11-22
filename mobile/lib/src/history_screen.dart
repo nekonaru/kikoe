@@ -178,6 +178,10 @@ class _HistoryViewerState extends State<HistoryViewer> {
         return widget.entry.vtt();
       case 'json':
         return widget.entry.json();
+      case 'md':
+        return widget.entry.md();
+      case 'csv':
+        return widget.entry.csv();
       default:
         return widget.entry.txt();
     }
@@ -214,7 +218,7 @@ class _HistoryViewerState extends State<HistoryViewer> {
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
               child: Row(
                 children: [
-                  for (final f in const ['srt', 'txt', 'vtt', 'json'])
+                  for (final f in const ['srt', 'txt', 'vtt', 'json', 'md', 'csv'])
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: ChoiceChip(

@@ -40,6 +40,13 @@ jobs:
           $bin = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
           if (-not $bin) { throw "kikoe binary not found in build output" }
           & $bin --help
+          & $bin --version
+
+      - name: End-to-end transcription (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          set -euo pipefail
+          bash scripts/smoke_transcribe.sh ./build/kikoe
 
       - name: Package CLI
         shell: pwsh

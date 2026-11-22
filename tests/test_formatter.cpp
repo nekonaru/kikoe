@@ -26,6 +26,8 @@ void test_parse_format()
     assert(parse_format("Srt", fmt) && fmt == OutputFormat::Srt);
     assert(parse_format("vtt", fmt) && fmt == OutputFormat::Vtt);
     assert(parse_format("json", fmt) && fmt == OutputFormat::Json);
+    assert(parse_format("md", fmt) && fmt == OutputFormat::Md);
+    assert(parse_format("CSV", fmt) && fmt == OutputFormat::Csv);
     assert(!parse_format("docx", fmt));
     assert(!parse_format("", fmt));
 }
@@ -68,6 +70,17 @@ void test_json_escapes()
     assert(out.back() == '\n');
 }
 
+void test_md_and_csv()
+{
+    const std::string md = format_segments(sample_segments(), OutputFormat::Md);
+    assert(md.find("# Transcript") == 0);
+    assert(md.find("**00:00:00.000** Halo dunia.") != std::string::npos);
+    const std::string csv = format_segments(sample_segments(), OutputFormat::Csv);
+    assert(csv.find("index,start_ms,end_ms,text\n") == 0);
+    assert(csv.find("1,0,2500,\"Halo dunia.\"\n") != std::string::npos);
+    assert(csv.find("2,2500,5340,\"Ini uji coba.\"\n") != std::string::npos);
+}
+
 void test_hours_timestamp()
 {
     SegmentList s;
@@ -86,6 +99,7 @@ int main()
     test_srt_structure();
     test_vtt_structure();
     test_json_escapes();
+    test_md_and_csv();
     test_hours_timestamp();
     std::printf("kikoe formatter ok\n");
     return 0;

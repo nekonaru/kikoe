@@ -1,7 +1,7 @@
 name: kikoe_desktop
 description: "Kikoe desktop app: free, unlimited, offline audio/video transcription."
 publish_to: 'none'
-version: 1.7.0+9
+version: 1.8.0+10
 
 environment:
   sdk: ^3.13.0
