@@ -33,6 +33,7 @@ class AppState extends ChangeNotifier {
   bool translate = false;
   int nThreads = 0; // 0 = auto
   bool useGpu = false;
+  bool gpuBuildAvailable = false;
   String saveFormat = 'srt';
   String initialPrompt = '';
   bool autoSave = false; // save each finished transcript in saveFormat
@@ -79,14 +80,15 @@ class AppState extends ChangeNotifier {
       try {
         final lib = KikoeFFI.load();
         final pct = lib.lastProgress(Pointer<Void>.fromAddress(addr));
-        if (pct >= 0 && pct <= 100) {
-          for (final item in items) {
-            if (item.status == QueueStatus.transcribing) {
-              item.progress = pct;
-            }
+        if (pct < 0 || pct > 100) return;
+        var changed = false;
+        for (final item in items) {
+          if (item.status == QueueStatus.transcribing && item.progress != pct) {
+            item.progress = pct;
+            changed = true;
           }
-          notifyListeners();
         }
+        if (changed) notifyListeners();
       } catch (_) {
         // If FFI is unavailable we simply keep the old indeterminate display.
       }
@@ -146,6 +148,11 @@ class AppState extends ChangeNotifier {
   /// Kick off worker startup. Called once from the UI.
   Future<void> ensureStarted() async {
     await _loadSettings();
+    try {
+      gpuBuildAvailable = KikoeFFI.load().gpuEnabled == 1;
+    } catch (_) {
+      gpuBuildAvailable = false;
+    }
     try {
       await Directory(defaultOutDir).create(recursive: true);
     } catch (_) {

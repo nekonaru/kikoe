@@ -61,7 +61,16 @@ int kk_abi_version(void)
 
 const char* kk_version_string(void)
 {
-    return "1.8.0";
+    return "1.9.0";
+}
+
+int kk_gpu_enabled(void)
+{
+#if defined(GGML_CUDA) || defined(GGML_VULKAN) || defined(GGML_METAL)
+    return 1;
+#else
+    return 0;
+#endif
 }
 
 const char* kk_error_string(int err)
