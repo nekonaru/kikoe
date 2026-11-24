@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(kikoe
-        VERSION 1.8.0
+        VERSION 1.9.0
         DESCRIPTION "Free, unlimited, offline audio/video transcription powered by whisper.cpp"
         HOMEPAGE_URL "https://github.com/nekonaru/kikoe"
         LANGUAGES C CXX)

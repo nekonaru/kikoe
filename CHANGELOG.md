@@ -5,6 +5,15 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v1.9.0
+
+An audit release: a dead GPU switch is removed from CPU-only builds and progress polling no longer rebuilds the UI on every tick.
+
+### Improvements
+
+- **`kk_gpu_enabled()` added to the C API.** Reports whether the loaded library was built with a GPU backend. The desktop app now hides the "Use GPU" toggle when the official CPU-only build cannot honor it.
+- **Progress polling optimized.** The desktop UI only rebuilds when the percentage actually changes, instead of on every 80 ms tick.
+
 ## v1.8.0
 
 A format and verification release: two new export formats and CI that finally checks a real transcription.

@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #define KK_ABI_VERSION_MAJOR 0
-#define KK_ABI_VERSION_MINOR 2
+#define KK_ABI_VERSION_MINOR 3
 
 typedef struct kk_engine kk_engine;
 
@@ -74,8 +74,12 @@ typedef void (*kk_segment_cb)(const kk_segment* seg, void* user);
 /* Returns KK_ABI_VERSION_MAJOR * 100 + KK_ABI_VERSION_MINOR. */
 KK_API int kk_abi_version(void);
 
-/* Static, never NULL. For example "1.8.0". */
+/* Static, never NULL. For example "1.9.0". */
 KK_API const char* kk_version_string(void);
+
+/* 1 when this library was built with a GPU backend, 0 for CPU-only builds.
+ * The UI uses this to hide the GPU toggle instead of offering a dead switch. */
+KK_API int kk_gpu_enabled(void);
 
 /* kk_error codes. */
 enum kk_error {

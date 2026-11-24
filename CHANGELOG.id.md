@@ -5,6 +5,15 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v1.9.0
+
+Rilis audit: sakelar GPU yang tidak berfungsi disembunyikan pada build CPU-only, dan polling progres tidak lagi membangun ulang UI setiap detak.
+
+### Peningkatan
+
+- **`kk_gpu_enabled()` ditambahkan ke C API.** Melaporkan apakah pustaka yang dimuat dibangun dengan backend GPU. Aplikasi desktop kini menyembunyikan toggle "Use GPU" saat build CPU-only resmi tidak bisa menggunakannya.
+- **Polling progres dioptimasi.** UI desktop hanya dibangun ulang saat persentase benar-benar berubah, bukan setiap detak 80 ms.
+
 ## v1.8.0
 
 Rilis format dan verifikasi: dua format ekspor baru dan CI yang akhirnya memeriksa transkripsi sungguhan.

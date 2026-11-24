@@ -93,6 +93,9 @@ typedef KKEngineFree = void Function(Pointer<Void> engine);
 typedef KKAbiVersionNative = Int32 Function();
 typedef KKAbiVersion = int Function();
 
+typedef KKGpuEnabledNative = Int32 Function();
+typedef KKGpuEnabled = int Function();
+
 typedef KKVersionStringNative = Pointer<Utf8> Function();
 typedef KKVersionString = Pointer<Utf8> Function();
 
@@ -146,7 +149,8 @@ DynamicLibrary _loadLibrary() {
 class KikoeFFI {
   KikoeFFI._(this._lib) {
     abiVersion = _lib.lookupFunction<KKAbiVersionNative, KKAbiVersion>('kk_abi_version')();
-    versionString =
+    gpuEnabled = _lib.lookupFunction<KKGpuEnabledNative, KKGpuEnabled>('kk_gpu_enabled')();
+        versionString =
         _lib.lookupFunction<KKVersionStringNative, KKVersionString>('kk_version_string')().toDartString();
     engineCreate = _lib.lookupFunction<KKEngineCreateNative, KKEngineCreate>('kk_engine_create');
     transcribe = _lib.lookupFunction<KKTranscribeNative, KKTranscribe>('kk_transcribe');
@@ -171,6 +175,7 @@ class KikoeFFI {
   final DynamicLibrary _lib;
   late final int abiVersion;
   late final String versionString;
+  late final int gpuEnabled;
   late final KKEngineCreate engineCreate;
   late final KKTranscribe transcribe;
   late final KKTranscribePcm transcribePcm;
