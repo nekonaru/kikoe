@@ -490,7 +490,7 @@ class _DownloadBlock extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Not downloaded yet. Kikoe needs the model file on this device once; after that, everything runs offline.',
+          tr('Not downloaded yet. Kikoe needs the model file on this device once; after that, everything runs offline.'),
           style: const TextStyle(fontSize: 11, color: kDim),
         ),
         SizedBox(height: 6),
@@ -590,7 +590,7 @@ class _DropHint extends StatelessWidget {
               const Icon(Icons.audio_file, size: 56, color: kBrand),
               SizedBox(height: 16),
               Text(
-                'Drop audio or video files here',
+                tr('Drop audio or video files here'),
                 style: TextStyle(fontSize: 17, color: kText, fontWeight: FontWeight.w600),
               ),
               SizedBox(height: 6),
@@ -793,7 +793,7 @@ class _StatusBar extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            '100% offline · no telemetry',
+            tr('100% offline · no telemetry'),
             style: const TextStyle(fontSize: 11, color: kDim),
           ),
         ],

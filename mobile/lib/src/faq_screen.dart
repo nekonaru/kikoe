@@ -86,7 +86,7 @@ class FaqScreen extends StatelessWidget {
                     tilePadding: EdgeInsets.zero,
                     childrenPadding: const EdgeInsets.only(bottom: 4),
                     title: Text(
-                      item.question,
+                      item.localizedQuestion,
                       style: const TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
@@ -98,7 +98,7 @@ class FaqScreen extends StatelessWidget {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          item.answer,
+                          item.localizedAnswer,
                           style: const TextStyle(fontSize: 12.5, height: 1.5, color: kDim),
                         ),
                       ),
@@ -125,4 +125,7 @@ class _Faq {
 
   final String question;
   final String answer;
+
+  String get localizedQuestion => L10n.instance.t(question);
+  String get localizedAnswer => L10n.instance.t(answer);
 }
