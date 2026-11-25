@@ -5,6 +5,20 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v2.1.0
+
+Completes the bilingual UI claim of v2.0.0: the FAQ and remaining UI strings are now genuinely localized.
+
+### Improvements
+
+- **All FAQ questions and answers translated.** The 23 FAQ entries in each app now render in Bahasa Indonesia when the locale is Indonesian, through a dedicated `faqId` map. v2.0.0 only translated chrome strings and left the FAQ in English.
+- **Privacy and download prompts translated.** Storage-permission dialogs, the "not downloaded yet" hint, the share hint, the status bar and the app tagline now follow the selected locale.
+- **Test coverage.** A new `faq_l10n_test.dart` in each app verifies FAQ translation and safe fallback, so a future regression cannot silently reintroduce English-only content.
+
+### Note
+
+v2.0.0 claimed a fully localized UI while the FAQ and several prompts were still English. This release corrects that claim.
+
 ## v2.0.0
 
 The first release with a fully localized user interface. English remains the source; Bahasa Indonesia is a real translation, not a stub.

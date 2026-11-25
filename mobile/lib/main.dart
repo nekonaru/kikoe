@@ -185,7 +185,7 @@ class _KikoeHomeState extends State<KikoeHome> {
           icon: const Icon(Icons.folder_open, color: kBrand),
           title: Text(tr('Save transcripts to Downloads')),
           content: Text(
-            'Kikoe saves your transcripts into Downloads/kikoe so they are easy to find. '
+            '${tr('Kikoe saves your transcripts into Downloads/kikoe so they are easy to find. ')}'
             'On this Android version, that needs the storage permission. '
             'Your audio files never leave the device either way.',
           ),
@@ -500,7 +500,7 @@ class _PickCard extends StatelessWidget {
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kText)),
                 SizedBox(height: 8),
                 Text(
-                  'Or share a file to Kikoe from any app.\nFree, unlimited, 100% offline.',
+                  tr('Or share a file to Kikoe from any app.\nFree, unlimited, 100% offline.'),
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: kDim, height: 1.45),
                 ),

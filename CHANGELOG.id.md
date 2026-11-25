@@ -5,6 +5,20 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v2.1.0
+
+Menyelesaikan klaim UI dwibahasa v2.0.0: FAQ dan string UI yang tersisa kini benar-benar terlokalisasi.
+
+### Peningkatan
+
+- **Semua pertanyaan dan jawaban FAQ diterjemahkan.** 23 entri FAQ di tiap aplikasi kini tampil dalam Bahasa Indonesia saat locale Indonesia, lewat peta `faqId` khusus. v2.0.0 hanya menerjemahkan string bingkai dan meninggalkan FAQ dalam Inggris.
+- **Privasi dan prompt unduhan diterjemahkan.** Dialog izin penyimpanan, petunjuk "belum diunduh", petunjuk bagikan, bilah status, dan tagline aplikasi kini mengikuti locale pilihan.
+- **Cakupan test.** `faq_l10n_test.dart` baru di tiap aplikasi memverifikasi terjemahan FAQ dan fallback yang aman, agar regresi tidak diam-diam mengembalikan konten Inggris saja.
+
+### Catatan
+
+v2.0.0 mengklaim UI sepenuhnya terlokalisasi padahal FAQ dan beberapa prompt masih Inggris. Rilis ini memperbaiki klaim tersebut.
+
 ## v2.0.0
 
 Rilis pertama dengan antarmuka yang sepenuhnya terlokalisasi. Inggris tetap menjadi sumber; Bahasa Indonesia adalah terjemahan nyata, bukan placeholder.
