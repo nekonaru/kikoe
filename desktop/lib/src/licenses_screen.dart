@@ -1,6 +1,7 @@
 // Open source licenses screen.
 library;
 
+import 'l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -71,7 +72,7 @@ copies or substantial portions of the Software.''';
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kSurface,
-        title: const Text('Open source licenses'),
+        title: Text(tr('Open source licenses')),
       ),
       body: SafeArea(
         child: ListView(
@@ -81,20 +82,20 @@ copies or substantial portions of the Software.''';
               'Kikoe is open source. So is everything inside it.',
               style: TextStyle(fontSize: 12, color: kDim),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             _LicenseBlock(
               title: 'Kikoe (this app)',
               badge: 'MIT',
               body: _kikoeMit,
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             _LicenseBlock(
               title: 'whisper.cpp',
               badge: 'MIT',
               body: _whisperMit,
             ),
-            const SizedBox(height: 18),
-            const SectionLabel('Credits'),
+            SizedBox(height: 18),
+            SectionLabel(tr('Credits')),
             SectionCard(
               child: Column(
                 children: [
@@ -146,7 +147,7 @@ copies or substantial portions of the Software.''';
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             Center(
               child: TextButton(
                 onPressed: () => showLicensePage(
@@ -155,7 +156,7 @@ copies or substantial portions of the Software.''';
                   applicationVersion: _version,
                   applicationLegalese: '© 2026 Nicolas Dwi Dharma (nekonaru)',
                 ),
-                child: const Text('Bundled Dart package licenses'),
+                child: Text(tr('Bundled Dart package licenses')),
               ),
             ),
             const SizedBox(height: 4),

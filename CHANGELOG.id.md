@@ -5,6 +5,20 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v2.0.0
+
+Rilis pertama dengan antarmuka yang sepenuhnya terlokalisasi. Inggris tetap menjadi sumber; Bahasa Indonesia adalah terjemahan nyata, bukan placeholder.
+
+### Fitur baru
+
+- **UI dwibahasa (Inggris / Bahasa Indonesia).** Kedua aplikasi menerjemahkan string antarmuka yang terlihat lewat lapisan `L10n` terpusat. Tile Bahasa di About mengganti locale; pilihan tersimpan dan diterapkan ke seluruh pohon widget.
+- **Test lokalisasi.** Tiap aplikasi punya test yang membuktikan Inggris mengembalikan teks sumber, Indonesia menerjemahkan kunci yang dikenal, dan string yang belum diterjemahkan jatuh ke Inggris dengan aman.
+
+### Catatan
+
+- Inggris tetap menjadi sumber setiap string. Terjemahan Indonesia yang belum ada jatuh ke Inggris, bukan widget kosong.
+- Ini versi mayor karena sistem bahasa UI adalah hal baru; alur kerja yang ada tidak berubah.
+
 ## v1.9.0
 
 Rilis audit: sakelar GPU yang tidak berfungsi disembunyikan pada build CPU-only, dan polling progres tidak lagi membangun ulang UI setiap detak.

@@ -1,6 +1,7 @@
 // FAQ screen: answers to the questions users actually ask.
 library;
 
+import 'l10n.dart';
 import 'package:flutter/material.dart';
 
 import 'kikoe_theme.dart';
@@ -64,13 +65,13 @@ class FaqScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kSurface,
-        title: const Text('FAQ'),
+        title: Text(tr('FAQ')),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            const Text('Answers to the questions that come up most often.',
+            Text(tr('Answers to the questions that come up most often.'),
                 style: TextStyle(fontSize: 12, color: kDim)),
             const SizedBox(height: 12),
             for (final item in _items) ...[
@@ -107,11 +108,11 @@ class FaqScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
             ],
-            const SizedBox(height: 4),
-            const Center(
-              child: Text('Still stuck? Open a GitHub issue.',
+            SizedBox(height: 4),
+            Center(
+              child: Text(tr('Still stuck? Open a GitHub issue.'),
                   style: TextStyle(fontSize: 11, color: kDim)),
             ),
           ],

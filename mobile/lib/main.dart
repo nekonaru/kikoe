@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'src/l10n.dart';
 import 'src/about_screen.dart';
 import 'src/app_state.dart';
 import 'src/faq_screen.dart';
@@ -37,7 +38,9 @@ String _durationLabel(List<dynamic> segments) {
   return '$minutes:${seconds.toString().padLeft(2, '0')}';
 }
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await L10n.instance.load();
   runApp(const KikoeApp());
 }
 
@@ -93,8 +96,12 @@ class _KikoeAppState extends State<KikoeApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return AnimatedBuilder(
+      animation: L10n.instance,
+      builder: (context, _) => MaterialApp(
       title: 'Kikoe',
+      locale: L10n.instance.flutterLocale,
+      supportedLocales: const [Locale('en'), Locale('id')],
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -108,6 +115,7 @@ class _KikoeAppState extends State<KikoeApp> {
         useMaterial3: true,
       ),
       home: KikoeHome(state: s),
+      ),
     );
   }
 }
@@ -147,7 +155,7 @@ class _KikoeHomeState extends State<KikoeHome> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Saved to $loc'),
+          content: Text(tr('Saved to $loc')),
           duration: const Duration(seconds: 5),
         ),
       );
@@ -158,7 +166,7 @@ class _KikoeHomeState extends State<KikoeHome> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
-          content: Text('Could not save: $err'),
+          content: Text(tr('Could not save: $err')),
           backgroundColor: const Color(0xFF3A241E),
         ),
       );
@@ -175,8 +183,8 @@ class _KikoeHomeState extends State<KikoeHome> {
         barrierDismissible: false,
         builder: (context) => AlertDialog(
           icon: const Icon(Icons.folder_open, color: kBrand),
-          title: const Text('Save transcripts to Downloads'),
-          content: const Text(
+          title: Text(tr('Save transcripts to Downloads')),
+          content: Text(
             'Kikoe saves your transcripts into Downloads/kikoe so they are easy to find. '
             'On this Android version, that needs the storage permission. '
             'Your audio files never leave the device either way.',
@@ -184,11 +192,11 @@ class _KikoeHomeState extends State<KikoeHome> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Not now'),
+              child: Text(tr('Not now')),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Allow'),
+              child: Text(tr('Allow')),
             ),
           ],
         ),
@@ -234,14 +242,14 @@ class _KikoeHomeState extends State<KikoeHome> {
                   borderRadius: BorderRadius.circular(9),
                   child: Image.asset('assets/icon.png', width: 30, height: 30),
                 ),
-                const SizedBox(width: 10),
-                const Column(
+                SizedBox(width: 10),
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Kikoe',
+                    Text(tr('Kikoe'),
                         style: TextStyle(
                             fontWeight: FontWeight.w800, fontSize: 17, color: kText, letterSpacing: 0.3)),
-                    Text('聞こえ · offline', style: TextStyle(fontSize: 10, color: kDim)),
+                    Text(tr('聞こえ · offline'), style: TextStyle(fontSize: 10, color: kDim)),
                   ],
                 ),
               ],
@@ -289,7 +297,7 @@ class _KikoeHomeState extends State<KikoeHome> {
                 const SizedBox(height: 16),
                 _ActionButton(state: state),
                 if (state.stage == JobStage.done && state.hasNextInQueue) ...[
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.tonalIcon(
@@ -300,7 +308,7 @@ class _KikoeHomeState extends State<KikoeHome> {
                         }
                       },
                       icon: const Icon(Icons.skip_next),
-                      label: Text('Next: ${p.basename(state.queue[state.queueIndex + 1])}'),
+                      label: Text(tr('Next: ${p.basename(state.queue[state.queueIndex + 1])}')),
                     ),
                   ),
                 ],
@@ -322,15 +330,15 @@ class _KikoeHomeState extends State<KikoeHome> {
                   ),
                 ],
                 if (state.error != null && state.stage == JobStage.failed) ...[
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   _ErrorCard(message: state.error!),
                 ],
                 if (state.segments.isNotEmpty) ...[
-                  const SizedBox(height: 18),
+                  SizedBox(height: 18),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const SectionLabel('Transcript'),
+                      SectionLabel(tr('Transcript')),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -365,8 +373,8 @@ class _KikoeHomeState extends State<KikoeHome> {
                                 ),
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Transcript copied to clipboard'),
+                                SnackBar(
+                                  content: Text(tr('Transcript copied to clipboard')),
                                   behavior: SnackBarBehavior.floating,
                                   duration: Duration(seconds: 2),
                                 ),
@@ -384,13 +392,13 @@ class _KikoeHomeState extends State<KikoeHome> {
                       style: const TextStyle(fontSize: 13.5, color: kText, height: 1.5),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Text(
                     '${_wordCount(state.segments)} words · ${_durationLabel(state.segments)} · ${state.segments.length} segments',
                     style: const TextStyle(fontSize: 11, color: kDim),
                   ),
-                  const SizedBox(height: 12),
-                  const SectionLabel('Save or share'),
+                  SizedBox(height: 12),
+                  SectionLabel(tr('Save or share')),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -408,12 +416,12 @@ class _KikoeHomeState extends State<KikoeHome> {
                           );
                         }),
                         icon: const Icon(Icons.share, size: 18),
-                        label: const Text('Share'),
+                        label: Text(tr('Share')),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text('Saves into Downloads/kikoe',
+                  SizedBox(height: 8),
+                  Text(tr('Saves into Downloads/kikoe'),
                       style: TextStyle(fontSize: 11, color: kDim)),
                 ],
               ],
@@ -441,14 +449,14 @@ class _QueueStrip extends StatelessWidget {
       child: Row(
         children: [
           const Icon(Icons.playlist_play, color: kBrand, size: 20),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               '${state.queue.length} files queued · #${state.queueIndex + 1}',
               style: const TextStyle(fontSize: 12, color: kText, fontWeight: FontWeight.w600),
             ),
           ),
-          const Text('Finish file, tap Next',
+          Text(tr('Finish file, tap Next'),
               style: TextStyle(fontSize: 10, color: kDim)),
         ],
       ),
@@ -478,7 +486,7 @@ class _PickCard extends StatelessWidget {
               colors: [kBrandSoft, Colors.transparent],
             ),
           ),
-          child: const Padding(
+          child: Padding(
             padding: EdgeInsets.symmetric(vertical: 34, horizontal: 20),
             child: Column(
               children: [
@@ -488,7 +496,7 @@ class _PickCard extends StatelessWidget {
                   child: Icon(Icons.audio_file, size: 42, color: kBrand),
                 ),
                 SizedBox(height: 16),
-                Text('Pick an audio or video file',
+                Text(tr('Pick an audio or video file'),
                     style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kText)),
                 SizedBox(height: 8),
                 Text(
@@ -554,7 +562,7 @@ class _FileCard extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(onPressed: onChange, child: const Text('Change')),
+          TextButton(onPressed: onChange, child: Text(tr('Change'))),
         ],
       ),
     );
@@ -575,7 +583,7 @@ class _ModelSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionLabel('Model'),
+          SectionLabel(tr('Model')),
           DropdownButton<String>(
             value: state.modelName,
             isExpanded: true,
@@ -584,7 +592,7 @@ class _ModelSection extends StatelessWidget {
             items: kMobileModels
                 .map((m) => DropdownMenuItem(
                       value: m.name,
-                      child: Text('${m.name}  ·  ${m.sizeMb.toStringAsFixed(0)} MB',
+                      child: Text(tr('${m.name}  ·  ${m.sizeMb.toStringAsFixed(0)} MB'),
                           overflow: TextOverflow.ellipsis),
                     ))
                 .toList(),
@@ -592,11 +600,11 @@ class _ModelSection extends StatelessWidget {
               if (v != null) state.setModel(v);
             },
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           if (percent != null) ...[
-            Text('Downloading ${model.name}… $percent%',
+            Text(tr('Downloading ${model.name}… $percent%'),
                 style: const TextStyle(fontSize: 12, color: kText)),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             LinearProgressIndicator(
                 value: percent / 100, backgroundColor: kSurface2, color: kBrand),
           ] else if (!cached) ...[
@@ -604,18 +612,18 @@ class _ModelSection extends StatelessWidget {
               'One-time download, then fully offline. ${model.sizeMb.toStringAsFixed(0)} MB.',
               style: const TextStyle(fontSize: 11, color: kDim),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             FilledButton.tonalIcon(
               onPressed: () => state.downloadModel(model.name),
               icon: const Icon(Icons.download),
-              label: Text('Download ${model.name}'),
+              label: Text(tr('Download ${model.name}')),
             ),
             if (state.downloadError != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(state.downloadError!, style: const TextStyle(fontSize: 11, color: kBrand)),
             ],
           ] else
-            Text('${model.note} · cached, works offline',
+            Text(tr('${model.note} · cached, works offline'),
                 style: const TextStyle(fontSize: 11, color: kDim)),
         ],
       ),
@@ -679,10 +687,10 @@ class _OptionsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionLabel('Options'),
+          SectionLabel(tr('Options')),
           Row(
             children: [
-              const Text('Language', style: TextStyle(fontSize: 12, color: kDim)),
+              Text(tr('Language'), style: TextStyle(fontSize: 12, color: kDim)),
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButton<String>(
@@ -703,28 +711,28 @@ class _OptionsSection extends StatelessWidget {
           SwitchListTile(
             value: state.translate,
             onChanged: state.setTranslate,
-            title: const Text('Translate to English'),
+            title: Text(tr('Translate to English')),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
           SwitchListTile(
             value: state.useVad,
             onChanged: state.setUseVad,
-            title: const Text('Filter silence (VAD)'),
+            title: Text(tr('Filter silence (VAD)')),
             subtitle: state.useVad && !state.vadReady
-                ? const Text('Silero model (0.9 MB) downloads once',
+                ? Text(tr('Silero model (0.9 MB) downloads once'),
                     style: TextStyle(fontSize: 11))
-                : const Text('Skip silent regions with Silero VAD',
+                : Text(tr('Skip silent regions with Silero VAD'),
                     style: TextStyle(fontSize: 11)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           SwitchListTile(
             value: state.autoSave,
             onChanged: state.setAutoSave,
-            title: const Text('Save automatically'),
-            subtitle: const Text('SRT goes to Downloads/kikoe when done',
+            title: Text(tr('Save automatically')),
+            subtitle: Text(tr('SRT goes to Downloads/kikoe when done'),
                 style: TextStyle(fontSize: 11)),
             dense: true,
             contentPadding: EdgeInsets.zero,
@@ -766,7 +774,7 @@ class _ActionButton extends StatelessWidget {
           onPressed: state.cancelCurrent,
           style: FilledButton.styleFrom(backgroundColor: kSurface2, foregroundColor: kText),
           icon: const Icon(Icons.stop),
-          label: const Text('Cancel'),
+          label: Text(tr('Cancel')),
         ),
       );
     }
