@@ -1,6 +1,7 @@
 // Sponsor screen: external links to the author's sponsorship profiles.
 library;
 
+import 'l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -44,7 +45,7 @@ class SponsorScreen extends StatelessWidget {
     final ok = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the browser.')),
+        SnackBar(content: Text(tr('Could not open the browser.'))),
       );
     }
   }
@@ -54,7 +55,7 @@ class SponsorScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kSurface,
-        title: const Text('Sponsor Kikoe'),
+        title: Text(tr('Sponsor Kikoe')),
       ),
       body: SafeArea(
         child: ListView(
@@ -85,8 +86,8 @@ class SponsorScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
-            const SectionLabel('Ways to support'),
+            SizedBox(height: 18),
+            SectionLabel(tr('Ways to support')),
             for (final option in _options) ...[
               SectionCard(
                 child: InkWell(

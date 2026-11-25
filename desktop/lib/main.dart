@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
+import 'src/l10n.dart';
 import 'src/about_screen.dart';
 import 'src/app_state.dart';
 import 'src/faq_screen.dart';
@@ -14,7 +15,9 @@ import 'src/model_menu.dart';
 import 'src/queue_item.dart';
 import 'src/transcript_editor_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await L10n.instance.load();
   runApp(const KikoeApp());
 }
 
@@ -25,8 +28,12 @@ class KikoeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return AnimatedBuilder(
+      animation: L10n.instance,
+      builder: (context, _) => MaterialApp(
       title: 'Kikoe',
+      locale: L10n.instance.flutterLocale,
+      supportedLocales: const [Locale('en'), Locale('id')],
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -41,6 +48,7 @@ class KikoeApp extends StatelessWidget {
         fontFamily: 'Segoe UI',
       ),
       home: KikoeHome(state: state ?? AppState()),
+      ),
     );
   }
 }
@@ -234,7 +242,7 @@ class _ControlPanel extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const _SectionLabel('Model'),
+          _SectionLabel(tr('Model')),
           DropdownButton<String>(
             value: s.modelName,
             isExpanded: true,
@@ -252,7 +260,7 @@ class _ControlPanel extends StatelessWidget {
               if (v != null) s.setModel(v);
             },
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           if (!s.selectedModelCached)
             _DownloadBlock(state: s, model: model, downloading: downloading)
           else
@@ -260,8 +268,8 @@ class _ControlPanel extends StatelessWidget {
               model.note,
               style: const TextStyle(fontSize: 11, color: kDim),
             ),
-          const SizedBox(height: 18),
-          const _SectionLabel('Language'),
+          SizedBox(height: 18),
+          _SectionLabel(tr('Language')),
           DropdownButton<String>(
             value: s.language,
             isExpanded: true,
@@ -273,8 +281,8 @@ class _ControlPanel extends StatelessWidget {
               if (v != null) s.setLanguage(v);
             },
           ),
-          const SizedBox(height: 18),
-          const _SectionLabel('Save format'),
+          SizedBox(height: 18),
+          _SectionLabel(tr('Save format')),
           DropdownButton<String>(
             value: s.saveFormat,
             isExpanded: true,
@@ -286,7 +294,7 @@ class _ControlPanel extends StatelessWidget {
               if (v != null) s.setSaveFormat(v);
             },
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -299,57 +307,57 @@ class _ControlPanel extends StatelessWidget {
               ),
               TextButton(
                 onPressed: onPickOutDir,
-                child: const Text('Choose…'),
+                child: Text(tr('Choose…')),
               ),
               if (s.customOutDir != null)
                 TextButton(
                   onPressed: () => s.setCustomOutDir(null),
-                  child: const Text('Reset'),
+                  child: Text(tr('Reset')),
                 ),
             ],
           ),
-          const SizedBox(height: 18),
-          const _SectionLabel('Threads'),
+          SizedBox(height: 18),
+          _SectionLabel(tr('Threads')),
           DropdownButton<int>(
             value: s.nThreads,
             isExpanded: true,
             dropdownColor: kSurface,
             items: [
-              const DropdownMenuItem(value: 0, child: Text('auto')),
+              DropdownMenuItem(value: 0, child: Text(tr('auto'))),
               for (var i = 1; i <= 16; i++)
-                DropdownMenuItem(value: i, child: Text('$i')),
+                DropdownMenuItem(value: i, child: Text(tr('$i'))),
             ],
             onChanged: (v) {
               if (v != null) s.setThreads(v);
             },
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           SwitchListTile(
             value: s.translate,
             onChanged: s.setTranslate,
-            title: const Text('Translate to English'),
+            title: Text(tr('Translate to English')),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
           SwitchListTile(
             value: s.useGpu,
             onChanged: s.setUseGpu,
-            title: const Text('Use GPU (GPU build)'),
+            title: Text(tr('Use GPU (GPU build)')),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
           SwitchListTile(
             value: s.useVad,
             onChanged: s.setUseVad,
-            title: const Text('Filter silence (VAD)'),
+            title: Text(tr('Filter silence (VAD)')),
             subtitle: s.useVad && !s.vadReady
-                ? const Text('Silero model (0.9 MB) downloads once', style: TextStyle(fontSize: 11))
-                : const Text('Skip silent regions with Silero VAD', style: TextStyle(fontSize: 11)),
+                ? Text(tr('Silero model (0.9 MB) downloads once'), style: TextStyle(fontSize: 11))
+                : Text(tr('Skip silent regions with Silero VAD'), style: TextStyle(fontSize: 11)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
-          const SizedBox(height: 4),
-          const Text('Custom vocabulary (optional)',
+          SizedBox(height: 4),
+          Text(tr('Custom vocabulary (optional)'),
               style: TextStyle(fontSize: 10, color: kDim, letterSpacing: 0.6)),
           const SizedBox(height: 4),
           _PromptField(state: s),
@@ -358,7 +366,7 @@ class _ControlPanel extends StatelessWidget {
             Row(
               children: [
                 const Icon(Icons.error_outline, color: kBrand, size: 16),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     s.downloadError!,
@@ -371,19 +379,19 @@ class _ControlPanel extends StatelessWidget {
           SwitchListTile(
             value: s.autoSave,
             onChanged: s.setAutoSave,
-            title: const Text('Save automatically'),
-            subtitle: const Text('Write transcripts to the output folder when done',
+            title: Text(tr('Save automatically')),
+            subtitle: Text(tr('Write transcripts to the output folder when done'),
                 style: TextStyle(fontSize: 11)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: 18),
           _StartButton(state: s),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           OutlinedButton.icon(
             onPressed: onPickFiles,
             icon: const Icon(Icons.file_open_outlined),
-            label: const Text('Add files…'),
+            label: Text(tr('Add files…')),
           ),
         ],
       ),
@@ -471,7 +479,7 @@ class _DownloadBlock extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Downloading ${model.name}.',
+          Text(tr('Downloading ${model.name}.'),
               style: const TextStyle(fontSize: 12, color: kText)),
           const SizedBox(height: 6),
           const LinearProgressIndicator(color: kBrand),
@@ -485,11 +493,11 @@ class _DownloadBlock extends StatelessWidget {
           'Not downloaded yet. Kikoe needs the model file on this device once; after that, everything runs offline.',
           style: const TextStyle(fontSize: 11, color: kDim),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         FilledButton.tonalIcon(
           onPressed: state.downloadSelectedModel,
           icon: const Icon(Icons.download),
-          label: Text('Download ${model.name} (${model.sizeMb.toStringAsFixed(0)} MB)'),
+          label: Text(tr('Download ${model.name} (${model.sizeMb.toStringAsFixed(0)} MB)')),
         ),
       ],
     );
@@ -511,7 +519,7 @@ class _StartButton extends StatelessWidget {
           onPressed: state.cancelCurrent,
           style: FilledButton.styleFrom(backgroundColor: kSurface2, foregroundColor: kText),
           icon: const Icon(Icons.stop),
-          label: const Text('Cancel'),
+          label: Text(tr('Cancel')),
         ),
       );
     }
@@ -580,13 +588,13 @@ class _DropHint extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.audio_file, size: 56, color: kBrand),
-              const SizedBox(height: 16),
-              const Text(
+              SizedBox(height: 16),
+              Text(
                 'Drop audio or video files here',
                 style: TextStyle(fontSize: 17, color: kText, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 6),
-              const Text('or click to browse', style: TextStyle(color: kDim)),
+              SizedBox(height: 6),
+              Text(tr('or click to browse'), style: TextStyle(color: kDim)),
               const SizedBox(height: 14),
               Text(
                 'Supports ${_QueuePanel._supported}',
@@ -668,16 +676,16 @@ class _ItemTile extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(_status, style: const TextStyle(fontSize: 11, color: kDim)),
             if (running) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               LinearProgressIndicator(value: item.progress > 0 ? item.progress / 100 : null, color: kBrand),
             ],
             if (item.segments.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               ExpansionTile(
-                title: const Text('Preview', style: TextStyle(fontSize: 12, color: kDim)),
+                title: Text(tr('Preview'), style: TextStyle(fontSize: 12, color: kDim)),
                 tilePadding: EdgeInsets.zero,
                 dense: true,
                 children: [
@@ -693,7 +701,7 @@ class _ItemTile extends StatelessWidget {
                       ),
                     ),
                   if (item.segments.length > 50)
-                    Text('… ${item.segments.length - 50} more lines',
+                    Text(tr('… ${item.segments.length - 50} more lines'),
                         style: const TextStyle(fontSize: 11, color: kDim)),
                 ],
               ),
@@ -715,7 +723,7 @@ class _ItemTile extends StatelessWidget {
                                   padding: const EdgeInsets.symmetric(horizontal: 10),
                                   minimumSize: const Size(0, 30),
                                 ),
-                                child: Text('Save ${f.toUpperCase()}'),
+                                child: Text(tr('Save ${f.toUpperCase()}')),
                               ),
                             ),
                         ],

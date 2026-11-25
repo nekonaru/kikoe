@@ -5,6 +5,7 @@
 // list through onSave; the edited text then flows into every export.
 library;
 
+import 'l10n.dart';
 import 'package:flutter/material.dart';
 
 import 'kikoe_theme.dart';
@@ -70,11 +71,11 @@ class _TranscriptEditorScreenState extends State<TranscriptEditorScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kSurface,
-        title: const Text('Edit transcript'),
+        title: Text(tr('Edit transcript')),
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('SAVE', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(tr('SAVE'), style: TextStyle(fontWeight: FontWeight.w800)),
           ),
         ],
       ),

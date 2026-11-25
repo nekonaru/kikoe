@@ -2,6 +2,7 @@
 // actually does.
 library;
 
+import 'l10n.dart';
 import 'package:flutter/material.dart';
 
 import 'kikoe_theme.dart';
@@ -57,7 +58,7 @@ class PrivacyScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kSurface,
-        title: const Text('Privacy policy'),
+        title: Text(tr('Privacy policy')),
       ),
       body: SafeArea(
         child: ListView(

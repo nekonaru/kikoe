@@ -2,6 +2,7 @@
 // the app's information surfaces.
 library;
 
+import 'l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -61,28 +62,28 @@ class _AboutScreenState extends State<AboutScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kSurface,
-        title: const Text('About'),
+        title: Text(tr('About')),
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
           children: [
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: Image.asset('assets/icon.png', width: 88, height: 88),
               ),
             ),
-            const SizedBox(height: 10),
-            const Center(
-              child: Text('Kikoe',
+            SizedBox(height: 10),
+            Center(
+              child: Text(tr('Kikoe'),
                   style: TextStyle(
                       fontSize: 28, fontWeight: FontWeight.w800, color: kText, letterSpacing: 0.3)),
             ),
-            const SizedBox(height: 4),
-            const Center(
-              child: Text('聞こえ · offline audio & video transcription',
+            SizedBox(height: 4),
+            Center(
+              child: Text(tr('聞こえ · offline audio & video transcription'),
                   style: TextStyle(fontSize: 12, color: kDim)),
             ),
             const SizedBox(height: 18),
@@ -112,8 +113,8 @@ class _AboutScreenState extends State<AboutScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
-            const SectionLabel('Built by'),
+            SizedBox(height: 18),
+            SectionLabel(tr('Built by')),
             SectionCard(
               child: Column(
                 children: [
@@ -127,8 +128,8 @@ class _AboutScreenState extends State<AboutScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
-            const SectionLabel('Support'),
+            SizedBox(height: 18),
+            SectionLabel(tr('Support')),
             SectionCard(
               child: Column(
                 children: [
@@ -151,11 +152,13 @@ class _AboutScreenState extends State<AboutScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 18),
-            const SectionLabel('App information'),
+            SizedBox(height: 18),
+            SectionLabel(tr('App information')),
             SectionCard(
               child: Column(
                 children: [
+                  const _LanguageTile(),
+                  const SoftDivider(),
                   LinkTile(
                     icon: Icons.help_outline,
                     title: 'FAQ',
@@ -185,14 +188,55 @@ class _AboutScreenState extends State<AboutScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 22),
-            const Center(
-              child: Text('Made with respect for your privacy.',
+            SizedBox(height: 22),
+            Center(
+              child: Text(tr('Made with respect for your privacy.'),
                   style: TextStyle(fontSize: 11, color: kDim)),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+
+class _LanguageTile extends StatelessWidget {
+  const _LanguageTile();
+
+  Future<void> _pick(BuildContext context) async {
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        backgroundColor: kSurface,
+        title: Text(tr('Language'),
+            style: const TextStyle(color: kText, fontSize: 16, fontWeight: FontWeight.w700)),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(context).pop('en'),
+            child: Text('English',
+                style: TextStyle(color: L10n.instance.locale == 'en' ? kBrand : kText)),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(context).pop('id'),
+            child: Text('Bahasa Indonesia',
+                style: TextStyle(color: L10n.instance.locale == 'id' ? kBrand : kText)),
+          ),
+        ],
+      ),
+    );
+    if (picked != null) await L10n.instance.setLocale(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.language, color: kBrand),
+      title: Text(tr('Language'),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kText)),
+      subtitle: Text(L10n.instance.locale == 'id' ? 'Bahasa Indonesia' : 'English',
+          style: const TextStyle(fontSize: 11, color: kDim)),
+      onTap: () => _pick(context),
     );
   }
 }
@@ -207,13 +251,13 @@ class _UpdateResultBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (result.status) {
       case UpdateStatus.upToDate:
-        return const Padding(
+        return Padding(
           padding: EdgeInsets.symmetric(vertical: 10),
           child: Row(
             children: [
               Icon(Icons.check_circle, color: kOk, size: 20),
               SizedBox(width: 10),
-              Text('You are on the latest version.',
+              Text(tr('You are on the latest version.'),
                   style: TextStyle(fontSize: 13, color: kText)),
             ],
           ),
@@ -224,23 +268,23 @@ class _UpdateResultBanner extends StatelessWidget {
           child: Row(
             children: [
               const Icon(Icons.system_update_alt, color: kBrand, size: 20),
-              const SizedBox(width: 10),
+              SizedBox(width: 10),
               Expanded(
-                child: Text('v${result.latestVersion} is available.',
+                child: Text(tr('v${result.latestVersion} is available.'),
                     style: const TextStyle(fontSize: 13, color: kText)),
               ),
-              TextButton(onPressed: onOpenRelease, child: const Text('Open release')),
+              TextButton(onPressed: onOpenRelease, child: Text(tr('Open release'))),
             ],
           ),
         );
       case UpdateStatus.failed:
-        return const Padding(
+        return Padding(
           padding: EdgeInsets.symmetric(vertical: 10),
           child: Row(
             children: [
               Icon(Icons.error_outline, color: kBrand, size: 20),
               SizedBox(width: 10),
-              Text('Could not check. Check your connection.',
+              Text(tr('Could not check. Check your connection.'),
                   style: TextStyle(fontSize: 13, color: kText)),
             ],
           ),

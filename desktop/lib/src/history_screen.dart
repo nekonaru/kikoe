@@ -4,6 +4,7 @@
 // the app documents directory (kikoe_history/); see history_store.dart.
 library;
 
+import 'l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -35,7 +36,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kSurface,
-        title: const Text('Recent transcriptions'),
+        title: Text(tr('Recent transcriptions')),
         actions: [
           IconButton(
             tooltip: 'Clear all',
@@ -49,7 +50,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator(color: kBrand));
+              return Center(child: CircularProgressIndicator(color: kBrand));
             }
             final entries = snapshot.data ?? const <HistoryEntry>[];
             if (entries.isEmpty) {
@@ -58,10 +59,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.history, size: 52, color: kDim),
-                    const SizedBox(height: 12),
-                    const Text('Nothing yet', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kText)),
-                    const SizedBox(height: 4),
-                    const Text('Your transcriptions will appear here.', style: TextStyle(fontSize: 12, color: kDim)),
+                    SizedBox(height: 12),
+                    Text(tr('Nothing yet'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kText)),
+                    SizedBox(height: 4),
+                    Text(tr('Your transcriptions will appear here.'), style: TextStyle(fontSize: 12, color: kDim)),
                   ],
                 ),
               );
@@ -69,7 +70,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             return ListView.separated(
               padding: const EdgeInsets.all(14),
               itemCount: entries.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => SizedBox(height: 10),
               itemBuilder: (context, i) => _HistoryTile(entry: entries[i], onChanged: _reload),
             );
           },
@@ -82,11 +83,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear history?'),
-        content: const Text('All saved transcriptions will be deleted. Media files are untouched.'),
+        title: Text(tr('Clear history?')),
+        content: Text(tr('All saved transcriptions will be deleted. Media files are untouched.')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete all')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(tr('Cancel'))),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(tr('Delete all'))),
         ],
       ),
     );
@@ -124,7 +125,7 @@ class _HistoryTile extends StatelessWidget {
           child: Row(
             children: [
               const Icon(Icons.description_outlined, color: kBrand),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,8 +134,8 @@ class _HistoryTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.w700, color: kText)),
-                    const SizedBox(height: 2),
-                    Text('${_date(entry.createdAt)} · ${entry.wordCount} words',
+                    SizedBox(height: 2),
+                    Text(tr('${_date(entry.createdAt)} · ${entry.wordCount} words'),
                         style: const TextStyle(fontSize: 11, color: kDim)),
                   ],
                 ),
@@ -198,8 +199,8 @@ class _HistoryViewerState extends State<HistoryViewer> {
             onPressed: () {
               Clipboard.setData(ClipboardData(text: _content));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Copied to clipboard'),
+                SnackBar(
+                  content: Text(tr('Copied to clipboard')),
                   behavior: SnackBarBehavior.floating,
                   duration: Duration(seconds: 2),
                 ),
