@@ -7,18 +7,22 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 class ModelEntry {
-  const ModelEntry(this.name, this.filename, this.sizeBytes, this.note);
+  const ModelEntry(this.name, this.filename, this.sizeBytes, this.note,
+      {this.customPath});
   final String name;
   final String filename;
   final int sizeBytes;
   final String note;
+  /// Set for a user-imported model; [cachedPath] then points directly to it.
+  final String? customPath;
+  bool get isCustom => customPath != null;
 
   double get sizeMb => sizeBytes / (1024 * 1024);
 
-  String cachedPath(String cacheDir) => p.join(cacheDir, filename);
+  String cachedPath(String cacheDir) =>
+      customPath ?? p.join(cacheDir, filename);
 
-  bool isCached(String cacheDir) =>
-      File(cachedPath(cacheDir)).existsSync();
+  bool isCached(String cacheDir) => File(cachedPath(cacheDir)).existsSync();
 }
 
 /// Display order matches docs (smallest to largest).

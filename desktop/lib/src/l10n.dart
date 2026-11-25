@@ -91,6 +91,9 @@ class L10n extends ChangeNotifier {
 }
 
 const Map<String, String> faqId = {
+    'Delete imported model': 'Hapus model hasil impor',
+    'Import a model…': 'Impor model…',
+    'imported': 'diimpor',
     '聛こえ · offline audio & video transcription': '聛こえ · transkripsi audio & video offline',
     'About > Version. Kikoe asks GitHub for the latest release and tells you whether you are up to date. Nothing is downloaded without you tapping a link.': 'Tentang > Versi. Kikoe bertanya ke GitHub untuk rilis terbaru dan memberi tahu apakah kamu sudah terbaru. Tidak ada yang diunduh tanpa kamu mengetuk tautan.',
     'Are my settings remembered?': 'Apakah pengaturan saya tersimpan?',

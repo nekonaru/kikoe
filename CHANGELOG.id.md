@@ -5,6 +5,20 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v2.2.0
+
+Rilis fitur besar: aplikasi tidak lagi terbatas pada registry model bawaan.
+
+### Fitur baru
+
+- **Impor model ggml sendiri.** Desktop dan Android kini bisa mengimpor berkas model `.bin` atau `.gguf` lewat pemilih berkas. Berkas disalin ke direktori model aplikasi, didaftarkan di daftar pilihan, diverifikasi lewat keberadaan berkas, dan dipakai langsung oleh jalur FFI `kk_engine_create(model_path)` yang sudah ada. Tidak ada perubahan core: CLI sudah menerima `--model PATH`, kini aplikasi juga.
+- **Manajemen model.** Model hasil impor tersimpan di SharedPreferences, bisa dipilih atau dihapus dari bagian model, dan menampilkan ukuran dalam MB. Penghapusan menghapus berkas dan membersihkan pilihan dengan aman.
+
+### Catatan
+
+- Model hasil impor tidak punya entri SHA-256 bawaan; dipakai apa adanya, sama seperti `--model PATH` di CLI.
+- Semua label baru tersedia dalam Inggris dan Indonesia.
+
 ## v2.1.0
 
 Menyelesaikan klaim UI dwibahasa v2.0.0: FAQ dan string UI yang tersisa kini benar-benar terlokalisasi.

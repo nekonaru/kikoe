@@ -247,18 +247,55 @@ class _ControlPanel extends StatelessWidget {
             value: s.modelName,
             isExpanded: true,
             dropdownColor: kSurface,
-            items: kModels
-                .map((m) => DropdownMenuItem(
-                      value: m.name,
-                      child: Text(
-                        '${m.name}  ·  ${m.sizeMb.toStringAsFixed(0)} MB',
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ))
-                .toList(),
+            items: [
+              ...kModels.map((m) => DropdownMenuItem(
+                    value: m.name,
+                    child: Text(
+                      '${m.name}  ·  ${m.sizeMb.toStringAsFixed(0)} MB',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )),
+              ...s.customModels.map((m) => DropdownMenuItem(
+                    value: m.name,
+                    child: Text(
+                      '${m.name}  ·  imported',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )),
+            ],
             onChanged: (v) {
               if (v != null) s.setModel(v);
             },
+          ),
+          if (s.customModels.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            ...s.customModels.map((m) => Row(
+                  children: [
+                    Expanded(
+                      child: Text('${m.name} (${m.sizeMb.toStringAsFixed(0)} MB)',
+                          style: const TextStyle(fontSize: 10, color: kDim)),
+                    ),
+                    IconButton(
+                      tooltip: 'Delete imported model',
+                      icon: const Icon(Icons.delete_outline, size: 16, color: kDim),
+                      onPressed: () => s.removeCustomModel(m),
+                    ),
+                  ],
+                )),
+          ],
+          TextButton.icon(
+            onPressed: () async {
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: const ['bin', 'gguf'],
+              );
+              if (result == null) return;
+              final path = result.files.single.path;
+              if (path == null) return;
+              await s.importModel(path, p.basenameWithoutExtension(path));
+            },
+            icon: const Icon(Icons.file_upload_outlined, size: 16),
+            label: const Text('Import a model…'),
           ),
           SizedBox(height: 6),
           if (!s.selectedModelCached)

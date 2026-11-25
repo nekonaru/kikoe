@@ -5,6 +5,20 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v2.2.0
+
+A big feature release: the apps are no longer limited to the built-in model registry.
+
+### New features
+
+- **Import your own ggml model.** Both desktop and Android can import any `.bin` or `.gguf` model through a file picker. The file is copied into the app's model directory, registered in the picker, verified by file existence, and used directly by the existing FFI `kk_engine_create(model_path)` path. No core change was needed: the CLI already accepted `--model PATH`, now the apps do too.
+- **Model management.** Imported models are persisted in SharedPreferences, can be selected or removed from the model section, and show their size in MB. Removing deletes the file and clears the selection safely.
+
+### Notes
+
+- Imported models have no built-in SHA-256 entry; they are used as-is, the same way CLI `--model PATH` works.
+- All new labels are localized in both English and Indonesian.
+
 ## v2.1.0
 
 Completes the bilingual UI claim of v2.0.0: the FAQ and remaining UI strings are now genuinely localized.
