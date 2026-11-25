@@ -589,16 +589,50 @@ class _ModelSection extends StatelessWidget {
             isExpanded: true,
             dropdownColor: kSurface,
             underline: const SizedBox.shrink(),
-            items: kMobileModels
-                .map((m) => DropdownMenuItem(
-                      value: m.name,
-                      child: Text(tr('${m.name}  ·  ${m.sizeMb.toStringAsFixed(0)} MB'),
-                          overflow: TextOverflow.ellipsis),
-                    ))
-                .toList(),
+            items: [
+              ...kMobileModels.map((m) => DropdownMenuItem(
+                    value: m.name,
+                    child: Text('${m.name}  ·  ${m.sizeMb.toStringAsFixed(0)} MB',
+                        overflow: TextOverflow.ellipsis),
+                  )),
+              ...state.customModels.map((m) => DropdownMenuItem(
+                    value: m.name,
+                    child: Text('${m.name}  ·  imported',
+                        overflow: TextOverflow.ellipsis),
+                  )),
+            ],
             onChanged: (v) {
               if (v != null) state.setModel(v);
             },
+          ),
+          if (state.customModels.isNotEmpty) ...[
+            SizedBox(height: 4),
+            ...state.customModels.map((m) => Row(
+                  children: [
+                    Expanded(
+                      child: Text('${m.name} (${m.sizeMb.toStringAsFixed(0)} MB)',
+                          style: const TextStyle(fontSize: 10, color: kDim)),
+                    ),
+                    IconButton(
+                      tooltip: 'Delete imported model',
+                      icon: const Icon(Icons.delete_outline, size: 16, color: kDim),
+                      onPressed: () => state.removeCustomModel(m),
+                    ),
+                  ],
+                )),
+          ],
+          TextButton.icon(
+            onPressed: () async {
+              final result = await FilePicker.platform.pickFiles(
+                type: FileType.custom,
+                allowedExtensions: const ['bin', 'gguf'],
+              );
+              if (result == null || result.files.single.path == null) return;
+              final path = result.files.single.path!;
+              await state.importModel(path, p.basenameWithoutExtension(path));
+            },
+            icon: const Icon(Icons.file_upload_outlined, size: 16),
+            label: const Text('Import a model…'),
           ),
           SizedBox(height: 10),
           if (percent != null) ...[

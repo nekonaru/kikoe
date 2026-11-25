@@ -2,6 +2,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 
@@ -107,7 +108,17 @@ class AppState extends ChangeNotifier {
     _progressTimer = null;
   }
 
-  MobileModel? get selectedModel => findMobileModel(modelName);
+  /// User-imported ggml models (persisted as JSON in SharedPreferences).
+  List<MobileModel> customModels = [];
+
+  MobileModel? get selectedModel {
+    final builtIn = findMobileModel(modelName);
+    if (builtIn != null) return builtIn;
+    for (final m in customModels) {
+      if (m.name == modelName) return m;
+    }
+    return null;
+  }
 
   bool modelCached(MobileModel model) {
     final dir = modelsDir;
@@ -130,7 +141,7 @@ class AppState extends ChangeNotifier {
     final model = selectedModel;
     final dir = modelsDir;
     if (model == null || dir == null) return null;
-    return p.join(dir, model.filename);
+    return model.cachedPath(dir);
   }
 
   static const List<String> languages = [
@@ -169,6 +180,7 @@ class AppState extends ChangeNotifier {
   static const _kPrefsVad = 'kikoe_vad';
   static const _kPrefsPrompt = 'kikoe_initial_prompt';
   static const _kPrefsAutoSave = 'kikoe_auto_save';
+  static const _kPrefsCustomModels = 'kikoe_custom_models';
 
   Future<void> _loadSettings() async {
     try {
@@ -179,6 +191,24 @@ class AppState extends ChangeNotifier {
       useVad = prefs.getBool(_kPrefsVad) ?? useVad;
       initialPrompt = prefs.getString(_kPrefsPrompt) ?? initialPrompt;
       autoSave = prefs.getBool(_kPrefsAutoSave) ?? autoSave;
+      final rawCustom = prefs.getString(_kPrefsCustomModels);
+      if (rawCustom != null && rawCustom.isNotEmpty) {
+        try {
+          final list = jsonDecode(rawCustom) as List<dynamic>;
+          customModels = list
+              .map((e) => MobileModel(
+                    e['name'] as String,
+                    e['filename'] as String,
+                    e['size'] as int,
+                    '',
+                    'imported model',
+                    customPath: e['path'] as String,
+                  ))
+              .toList();
+        } catch (_) {
+          customModels = [];
+        }
+      }
       notifyListeners();
     } catch (_) {
       // Preferences are best-effort; defaults are fine.
@@ -193,6 +223,16 @@ class AppState extends ChangeNotifier {
       await prefs.setBool(_kPrefsTranslate, translate);
       await prefs.setBool(_kPrefsVad, useVad);
       await prefs.setBool(_kPrefsAutoSave, autoSave);
+      await prefs.setString(
+          _kPrefsCustomModels,
+          jsonEncode(customModels
+              .map((m) => {
+                    'name': m.name,
+                    'filename': m.filename,
+                    'size': m.sizeBytes,
+                    'path': m.customPath,
+                  })
+              .toList()));
       if (initialPrompt.isEmpty) {
         await prefs.remove(_kPrefsPrompt);
       } else {
@@ -313,6 +353,34 @@ class AppState extends ChangeNotifier {
     translate = value;
     notifyListeners();
     _saveSettings();
+  }
+
+  /// Copy an imported ggml model into the models dir and register it.
+  Future<void> importModel(String sourcePath, String displayName) async {
+    final dir = modelsDir;
+    if (dir == null) return;
+    await Directory(dir).create(recursive: true);
+    final safe = displayName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final name = safe.endsWith('.bin') ? safe : '$safe.bin';
+    final target = p.join(dir, 'custom_${DateTime.now().millisecondsSinceEpoch}_$name');
+    final size = await File(sourcePath).length();
+    await File(sourcePath).copy(target);
+    customModels.add(MobileModel(name, p.basename(target), size, '', 'imported model',
+        customPath: target));
+    modelName = name;
+    notifyListeners();
+    await _saveSettings();
+  }
+
+  /// Delete a custom model file and its registry entry.
+  Future<void> removeCustomModel(MobileModel model) async {
+    try {
+      await File(model.customPath!).delete();
+    } catch (_) {}
+    customModels.removeWhere((m) => m.name == model.name);
+    if (modelName == model.name) modelName = 'small-q5_1';
+    notifyListeners();
+    await _saveSettings();
   }
 
   void setAutoSave(bool value) {

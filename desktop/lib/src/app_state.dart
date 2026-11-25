@@ -2,6 +2,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 
@@ -107,7 +108,17 @@ class AppState extends ChangeNotifier {
 
   static const List<String> formats = ['srt', 'txt', 'vtt', 'json', 'md', 'csv'];
 
-  ModelEntry? get selectedModel => findModel(modelName);
+  /// User-imported ggml models (persisted as JSON in SharedPreferences).
+  List<ModelEntry> customModels = [];
+
+  ModelEntry? get selectedModel {
+    final builtIn = findModel(modelName);
+    if (builtIn != null) return builtIn;
+    for (final m in customModels) {
+      if (m.name == modelName) return m;
+    }
+    return null;
+  }
 
   bool get selectedModelCached {
     final model = selectedModel;
@@ -176,6 +187,7 @@ class AppState extends ChangeNotifier {
   static const _kPrefsVad = 'kikoe_vad';
   static const _kPrefsPrompt = 'kikoe_initial_prompt';
   static const _kPrefsAutoSave = 'kikoe_auto_save';
+  static const _kPrefsCustomModels = 'kikoe_custom_models';
 
   Future<void> _loadSettings() async {
     try {
@@ -189,6 +201,23 @@ class AppState extends ChangeNotifier {
       useVad = prefs.getBool(_kPrefsVad) ?? useVad;
       autoSave = prefs.getBool(_kPrefsAutoSave) ?? autoSave;
       initialPrompt = prefs.getString(_kPrefsPrompt) ?? initialPrompt;
+      final rawCustom = prefs.getString(_kPrefsCustomModels);
+      if (rawCustom != null && rawCustom.isNotEmpty) {
+        try {
+          final list = jsonDecode(rawCustom) as List<dynamic>;
+          customModels = list
+              .map((e) => ModelEntry(
+                    e['name'] as String,
+                    e['filename'] as String,
+                    e['size'] as int,
+                    e['note'] as String,
+                    customPath: e['path'] as String,
+                  ))
+              .toList();
+        } catch (_) {
+          customModels = [];
+        }
+      }
       final custom = prefs.getString(_kPrefsOutDir);
       if (custom != null && custom.isNotEmpty) customOutDir = custom;
       notifyListeners();
@@ -213,6 +242,17 @@ class AppState extends ChangeNotifier {
       } else {
         await prefs.setString(_kPrefsPrompt, initialPrompt);
       }
+      await prefs.setString(
+          _kPrefsCustomModels,
+          jsonEncode(customModels
+              .map((m) => {
+                    'name': m.name,
+                    'filename': m.filename,
+                    'size': m.sizeBytes,
+                    'note': m.note,
+                    'path': m.customPath,
+                  })
+              .toList()));
       if (customOutDir != null) {
         await prefs.setString(_kPrefsOutDir, customOutDir!);
       } else {
@@ -352,6 +392,34 @@ class AppState extends ChangeNotifier {
     saveFormat = value;
     notifyListeners();
     _saveSettings();
+  }
+
+  /// Copy an imported ggml model into the cache dir and register it.
+  Future<void> importModel(String sourcePath, String displayName) async {
+    final dir = await Directory(cacheDir).create(recursive: true);
+    final safe = displayName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final name = safe.endsWith('.bin') ? safe : '$safe.bin';
+    final target = p.join(dir.path, 'custom_${DateTime.now().millisecondsSinceEpoch}_$name');
+    final size = await File(sourcePath).length();
+    await File(sourcePath).copy(target);
+    customModels.add(ModelEntry(name, p.basename(target), size, 'imported model',
+        customPath: target));
+    modelName = name;
+    notifyListeners();
+    await _saveSettings();
+  }
+
+  /// Delete a custom model file and its registry entry.
+  Future<void> removeCustomModel(ModelEntry model) async {
+    try {
+      await File(model.customPath!).delete();
+    } catch (_) {}
+    customModels.removeWhere((m) => m.name == model.name);
+    if (modelName == model.name) {
+      modelName = 'small';
+    }
+    notifyListeners();
+    await _saveSettings();
   }
 
   void setAutoSave(bool value) {

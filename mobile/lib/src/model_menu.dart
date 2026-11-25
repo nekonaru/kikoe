@@ -3,20 +3,27 @@
 /// verify what it fetches (curl is not available on Android).
 library;
 
+import 'package:path/path.dart' as p;
+
 class MobileModel {
   const MobileModel(this.name, this.filename, this.sizeBytes, this.sha256, this.note,
-      {this.urlOverride});
+      {this.urlOverride, this.customPath});
   final String name;
   final String filename;
   final int sizeBytes;
   final String sha256;
   final String note;
   final String? urlOverride;
+  /// Set for a user-imported model; no URL or checksum is known for it.
+  final String? customPath;
+  bool get isCustom => customPath != null;
 
   double get sizeMb => sizeBytes / (1024 * 1024);
 
   String url() => urlOverride ??
       'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/$filename';
+
+  String cachedPath(String dir) => customPath ?? p.join(dir, filename);
 }
 
 /// Subset suited for phones: small and below, plus quantised variants.
