@@ -30,12 +30,13 @@ class Segment {
 }
 
 class AppState extends ChangeNotifier {
-  AppState() {
-    _sub = transcriber.events.listen(_onEvent);
+  AppState({Transcriber? transcriber})
+      : transcriber = transcriber ?? Transcriber() {
+    _sub = this.transcriber.events.listen(_onEvent);
     NotificationService.instance.onCancelRequested = cancelCurrent;
   }
 
-  final Transcriber transcriber = Transcriber();
+  final Transcriber transcriber;
   StreamSubscription<TranscriberEvent>? _sub;
 
   // Input.
@@ -54,10 +55,12 @@ class AppState extends ChangeNotifier {
   int legacyStorageState = -1;
   bool storageNoticeShown = false;
 
-  // Job state.
+  // Job state. [activeJobId] correlates worker events with the current job so
+  // a stale job finishing after a new share cannot pollute the new transcript.
   JobStage stage = JobStage.idle;
   int progress = 0;
   String? error;
+  String? activeJobId;
   final List<Segment> segments = [];
   String? outputPath;
 
@@ -285,13 +288,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Set the input file and reset state. Does not start the job; call
-  /// [transcribe] or let the UI trigger it. A single file share resets the
-  /// queue to just this file.
-  void setInput(String path) {
-    queue = [path];
-    queueIndex = 0;
-    inputPath = path;
+  /// Reset all job state when the input changes. A job still running for the
+  /// old file is cancelled so its late events cannot land in the new result.
+  void _resetJobState() {
+    if (stage == JobStage.decoding || stage == JobStage.transcribing) {
+      transcriber.cancel();
+    }
+    activeJobId = null;
+    _stopProgressPolling();
     stage = JobStage.idle;
     progress = 0;
     error = null;
@@ -299,6 +303,16 @@ class AppState extends ChangeNotifier {
     outputPath = null;
     savedLocation = '';
     saveError = null;
+  }
+
+  /// Set the input file and reset state. Does not start the job; call
+  /// [transcribe] or let the UI trigger it. A single file share resets the
+  /// queue to just this file.
+  void setInput(String path) {
+    _resetJobState();
+    queue = [path];
+    queueIndex = 0;
+    inputPath = path;
     notifyListeners();
   }
 
@@ -307,31 +321,19 @@ class AppState extends ChangeNotifier {
   void setInputs(List<String> paths) {
     final cleaned = paths.where((p) => p.isNotEmpty).toList();
     if (cleaned.isEmpty) return;
+    _resetJobState();
     queue = cleaned;
     queueIndex = 0;
     inputPath = cleaned.first;
-    stage = JobStage.idle;
-    progress = 0;
-    error = null;
-    segments.clear();
-    outputPath = null;
-    savedLocation = '';
-    saveError = null;
     notifyListeners();
   }
 
   /// Advance to the next queued file. Returns true when there is one.
   bool advanceQueue() {
     if (!hasNextInQueue) return false;
+    _resetJobState();
     queueIndex += 1;
     inputPath = queue[queueIndex];
-    stage = JobStage.idle;
-    progress = 0;
-    error = null;
-    segments.clear();
-    outputPath = null;
-    savedLocation = '';
-    saveError = null;
     notifyListeners();
     return true;
   }
@@ -405,6 +407,8 @@ class AppState extends ChangeNotifier {
     final modelPath = selectedModelPath;
     if (modelPath == null) return;
 
+    final jobId = _jobId(path);
+    activeJobId = jobId;
     stage = JobStage.decoding;
     progress = 0;
     error = null;
@@ -422,13 +426,16 @@ class AppState extends ChangeNotifier {
       _fail('Decode failed: $e');
       return;
     }
+    // A new input may have replaced this one while decoding. Its reset already
+    // cleared activeJobId, so drop this stale job instead of running it.
+    if (activeJobId != jobId) return;
 
     stage = JobStage.transcribing;
     notifyListeners();
     await NotificationService.instance.showProgress(0);
 
     transcriber.transcribePcm(
-      id: _jobId(path),
+      id: jobId,
       samples: samples,
       modelPath: modelPath,
       language: language,
@@ -551,6 +558,10 @@ class AppState extends ChangeNotifier {
     );
   }
 
+  /// Empty ids come from engine-level failures before a job exists; those are
+  /// always applied. Everything else must match the active job.
+  bool _isCurrentJob(String id) => id.isEmpty || id == activeJobId;
+
   void _onEvent(TranscriberEvent event) {
     switch (event) {
       case Ready():
@@ -561,13 +572,17 @@ class AppState extends ChangeNotifier {
         _startProgressPolling();
         notifyListeners();
       case TranscribeProgress():
+        if (!_isCurrentJob(event.id)) return;
         progress = event.percent;
         NotificationService.instance.showProgress(progress);
         notifyListeners();
       case SegmentReady():
+        if (!_isCurrentJob(event.id)) return;
         segments.add(Segment(event.startMs, event.endMs, event.text));
         notifyListeners();
       case TranscribeDone():
+        if (!_isCurrentJob(event.id)) return;
+        activeJobId = null;
         stage = JobStage.done;
         progress = 100;
         _stopProgressPolling();
@@ -584,6 +599,8 @@ class AppState extends ChangeNotifier {
         if (autoSave) saveTranscription('srt', (_) {});
         notifyListeners();
       case TranscribeFailed():
+        if (!_isCurrentJob(event.id)) return;
+        activeJobId = null;
         stage = event.cancelled ? JobStage.cancelled : JobStage.failed;
         error = event.message;
         _stopProgressPolling();
