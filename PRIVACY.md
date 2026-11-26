@@ -1,6 +1,6 @@
 # Privacy policy
 
-Effective: v3.0.0 · applies to Kikoe (CLI, desktop and Android apps)
+Effective: v3.1.0 · applies to Kikoe (CLI, desktop and Android apps)
 
 The short version: Kikoe makes no network requests except the ones you start
 yourself (model downloads and the update check). Your audio, video,

@@ -21,8 +21,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <set>
+#include <thread>
 #include <string>
 #include <vector>
 
@@ -35,11 +38,13 @@
 namespace {
 
 kikoe::Engine* g_engine = nullptr;
+std::atomic<bool> g_cancel_requested{false};
 
 #ifdef _WIN32
 BOOL WINAPI console_ctrl_handler(DWORD type)
 {
     if (type == CTRL_C_EVENT || type == CTRL_BREAK_EVENT) {
+        g_cancel_requested.store(true);
         if (g_engine) g_engine->cancel();
         return TRUE;
     }
@@ -48,6 +53,7 @@ BOOL WINAPI console_ctrl_handler(DWORD type)
 #else
 void sigint_handler(int)
 {
+    g_cancel_requested.store(true);
     if (g_engine) g_engine->cancel();
 }
 #endif
@@ -83,6 +89,9 @@ void print_usage(const char* argv0)
         "  --diarize          Label speaker turns with tinydiarize\n"
         "  --prompt-file FILE Read the initial prompt from a text file\n"
         "  --config FILE      Load defaults from a TOML-style file (default: kikoe.toml)\n"
+        "  --dry-run          Decode and report duration without transcribing\n"
+        "  --benchmark        Print wall time for each transcription\n"
+        "  --watch DIR        Transcribe new files appearing in DIR (Ctrl+C to stop)\n"
         "  --translate        Translate speech to English instead of transcribing\n"
         "  --prompt TEXT      Initial prompt / custom vocabulary hint\n"
         "  --format FMTS      Comma separated output formats: txt, srt, vtt, json, md, csv\n"
@@ -91,7 +100,7 @@ void print_usage(const char* argv0)
         "  --outdir DIR       Write <name>.<fmt> files into DIR\n"
         "  -h, --help         Show this help\n\n"
         "Model cache: %s\n",
-        "3.0.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
+        "3.1.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
 }
 
 void print_error(kikoe::ErrorCode code)
@@ -116,6 +125,9 @@ struct Cli {
     bool diarize = false;
     std::string prompt_file;
     std::string config_file;
+    bool dry_run = false;
+    bool benchmark = false;
+    std::string watch_dir;
     bool list_models = false;
     bool show_version = false;
     std::string download_model;
@@ -267,6 +279,9 @@ bool parse_cli(int argc, char** argv, Cli& cli)
         else if (arg == "--prompt") { const char* v = next(); if (!v) return false; cli.prompt = v; }
         else if (arg == "--prompt-file") { const char* v = next(); if (!v) return false; cli.prompt_file = v; }
         else if (arg == "--config") { next(); }
+        else if (arg == "--watch") { const char* v = next(); if (!v) return false; cli.watch_dir = v; }
+        else if (arg == "--dry-run") cli.dry_run = true;
+        else if (arg == "--benchmark") cli.benchmark = true;
         else if (arg == "--word-timestamps") cli.word_timestamps = true;
         else if (arg == "--diarize") cli.diarize = true;
         else if (arg == "-o" || arg == "--output") { const char* v = next(); if (!v) return false; cli.output = v; }
@@ -355,6 +370,127 @@ void print_models()
 
 } // namespace
 
+// Returns 0 on success, 1 on a per-file failure, -1 when cancelled.
+int process_input(kikoe::Engine& engine, const Cli& cli,
+                  const std::string& input, const std::string& prefix,
+                  bool multiple_inputs,
+                  const kikoe::TranscribeOptions& topts)
+{
+    kikoe::ErrorCode err = kikoe::ErrorCode::Ok;
+    kikoe::PcmAudio audio;
+    err = kikoe::load_pcm_any(input, audio);
+    if (err != kikoe::ErrorCode::Ok) {
+        std::fprintf(stderr, "%s%s: %s\n", prefix.c_str(), input.c_str(), kikoe::error_string(err));
+        if (err == kikoe::ErrorCode::DecoderNotFound) {
+            std::fprintf(stderr, "hint: install FFmpeg and make sure 'ffmpeg' is on PATH\n");
+        }
+        return 1;
+    }
+
+    if (cli.dry_run) {
+        const double seconds = static_cast<double>(audio.samples.size()) / 16000.0;
+        std::string formats;
+        for (kikoe::OutputFormat fmt : cli.formats) {
+            if (!formats.empty()) formats += ",";
+            formats += kikoe::format_extension(fmt);
+        }
+        std::fprintf(stdout, "%s: %.2f s of audio, model %s, formats %s\n",
+                     input.c_str(), seconds,
+                     cli.model.empty() ? "small" : cli.model.c_str(),
+                     formats.c_str());
+        std::fprintf(stdout, "No transcription performed. Time depends on device and model.\n");
+        return 0;
+    }
+
+    const auto started = std::chrono::steady_clock::now();
+    kikoe::SegmentList segments;
+    std::string cb_prefix = prefix.c_str();
+    err = engine.transcribe(audio.samples.data(), audio.samples.size(), topts,
+                            progress_cb, nullptr,
+                            const_cast<char*>(cb_prefix.c_str()), &segments);
+    std::fprintf(stderr, "\r%s      \r", prefix.c_str());
+    if (err == kikoe::ErrorCode::Cancelled) {
+        std::fprintf(stderr, "cancelled.\n");
+        return -1;
+    }
+    if (err != kikoe::ErrorCode::Ok) {
+        std::fprintf(stderr, "%s%s: %s\n", prefix.c_str(), input.c_str(), kikoe::error_string(err));
+        return 1;
+    }
+    if (cli.benchmark) {
+        const double elapsed = std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - started).count();
+        std::fprintf(stdout, "%s: %.2f s wall time\n", input.c_str(), elapsed);
+    }
+
+    int failed_writes = 0;
+    for (kikoe::OutputFormat fmt : cli.formats) {
+        const std::string body = kikoe::format_segments(segments, fmt);
+        const std::string ext = kikoe::format_extension(fmt);
+
+        std::string target;
+        if (!cli.output.empty()) target = cli.output;
+        else if (!cli.outdir.empty()) target = join_path(cli.outdir, replace_extension(base_name(input), ext));
+        else if (cli.formats.size() == 1 && !multiple_inputs) {
+            std::fwrite(body.data(), 1, body.size(), stdout);
+            continue;
+        } else {
+            target = replace_extension(input, ext);
+        }
+
+        std::ofstream f(target, std::ios::binary | std::ios::trunc);
+        if (!f) {
+            std::fprintf(stderr, "kikoe: cannot write '%s'\n", target.c_str());
+            ++failed_writes;
+            continue;
+        }
+        f << body;
+        std::fprintf(stderr, "%swrote %s\n", prefix.c_str(), target.c_str());
+    }
+    return failed_writes == 0 ? 0 : 1;
+}
+
+int watch_directory(const Cli& cli, kikoe::Engine& engine,
+                    const kikoe::TranscribeOptions& topts)
+{
+    namespace fs = std::filesystem;
+    const fs::path dir(cli.watch_dir);
+    std::error_code ec;
+    if (!fs::is_directory(dir, ec)) {
+        std::fprintf(stderr, "kikoe: not a directory: %s\n", cli.watch_dir.c_str());
+        return 2;
+    }
+
+    std::set<std::string> known;
+    for (const auto& entry : fs::directory_iterator(dir, ec)) {
+        if (entry.is_regular_file()) known.insert(entry.path().string());
+    }
+    std::fprintf(stderr, "watching %s for new files (Ctrl+C to stop)\n", cli.watch_dir.c_str());
+
+    install_ctrl_handler();
+    while (true) {
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::vector<std::string> batch;
+        for (const auto& entry : fs::directory_iterator(dir, ec)) {
+            if (!entry.is_regular_file()) continue;
+            const std::string path = entry.path().string();
+            if (known.count(path)) continue;
+            const auto size1 = entry.file_size(ec);
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            const auto size2 = entry.file_size(ec);
+            if (size1 == size2 && size2 > 0) {
+                known.insert(path);
+                batch.push_back(path);
+            }
+        }
+        for (const auto& path : batch) {
+            const int rc = process_input(engine, cli, path, "", false, topts);
+            if (rc == -1) return 130;
+        }
+        if (g_cancel_requested.load()) return 130;
+    }
+}
+
 int main(int argc, char** argv)
 {
     Cli cli;
@@ -364,7 +500,7 @@ int main(int argc, char** argv)
     }
 
     if (cli.show_version) {
-        std::fprintf(stdout, "kikoe %s\n", "3.0.0");
+        std::fprintf(stdout, "kikoe %s\n", "3.1.0");
         return 0;
     }
 
@@ -390,7 +526,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    if (cli.inputs.empty()) {
+    if (cli.inputs.empty() && cli.watch_dir.empty() && !cli.dry_run) {
         print_usage(argv[0]);
         return 1;
     }
@@ -472,6 +608,10 @@ int main(int argc, char** argv)
     topts.vad = !vad_model_path.empty();
     topts.vad_model_path = vad_model_path;
 
+    if (!cli.watch_dir.empty()) {
+        return watch_directory(cli, *engine, topts);
+    }
+
     int failures = 0;
     const size_t n_inputs = cli.inputs.size();
     for (size_t fi = 0; fi < n_inputs; ++fi) {
@@ -483,56 +623,9 @@ int main(int argc, char** argv)
             prefix = buf;
         }
 
-        kikoe::PcmAudio audio;
-        err = kikoe::load_pcm_any(input, audio);
-        if (err != kikoe::ErrorCode::Ok) {
-            std::fprintf(stderr, "%s%s: %s\n", prefix.c_str(), input.c_str(), kikoe::error_string(err));
-            if (err == kikoe::ErrorCode::DecoderNotFound) {
-                std::fprintf(stderr, "hint: install FFmpeg and make sure 'ffmpeg' is on PATH\n");
-            }
-            ++failures;
-            continue;
-        }
-
-        kikoe::SegmentList segments;
-        std::string cb_prefix = prefix.c_str();
-        err = engine->transcribe(audio.samples.data(), audio.samples.size(), topts,
-                                 progress_cb, nullptr,
-                                 const_cast<char*>(cb_prefix.c_str()), &segments);
-        std::fprintf(stderr, "\r%s      \r", prefix.c_str());
-        if (err == kikoe::ErrorCode::Cancelled) {
-            std::fprintf(stderr, "cancelled.\n");
-            return 130;
-        }
-        if (err != kikoe::ErrorCode::Ok) {
-            std::fprintf(stderr, "%s%s: %s\n", prefix.c_str(), input.c_str(), kikoe::error_string(err));
-            ++failures;
-            continue;
-        }
-
-        for (kikoe::OutputFormat fmt : cli.formats) {
-            const std::string body = kikoe::format_segments(segments, fmt);
-            const std::string ext = kikoe::format_extension(fmt);
-
-            std::string target;
-            if (!cli.output.empty()) target = cli.output;
-            else if (!cli.outdir.empty()) target = join_path(cli.outdir, replace_extension(base_name(input), ext));
-            else if (cli.formats.size() == 1 && !multiple_inputs) {
-                std::fwrite(body.data(), 1, body.size(), stdout);
-                continue;
-            } else {
-                target = replace_extension(input, ext);
-            }
-
-            std::ofstream f(target, std::ios::binary | std::ios::trunc);
-            if (!f) {
-                std::fprintf(stderr, "kikoe: cannot write '%s'\n", target.c_str());
-                ++failures;
-                continue;
-            }
-            f << body;
-            std::fprintf(stderr, "%swrote %s\n", prefix.c_str(), target.c_str());
-        }
+        const int rc = process_input(*engine, cli, input, prefix, multiple_inputs, topts);
+        if (rc == -1) return 130;
+        if (rc == 1) ++failures;
     }
 
     return failures == 0 ? 0 : 4;

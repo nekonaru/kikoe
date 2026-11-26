@@ -5,6 +5,22 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v3.1.0
+
+The final wave of the v3 program, focused on CLI workflow.
+
+### New features
+
+- **Dry run.** `--dry-run` decodes the input and reports audio duration, selected model and output formats without transcribing. It explicitly reports that timing depends on the device and model instead of inventing an estimate.
+- **Benchmark output.** `--benchmark` prints measured wall time for each transcription on the current machine.
+- **Watch mode.** `--watch DIR` polls a directory every two seconds and transcribes new files once their size is stable. Ctrl+C stops the watcher.
+
+### Improvements
+
+- **Per-file processing was extracted** from the CLI main loop, so batch and watch mode share the same path and cannot drift apart.
+- **Cancellation in watch mode** uses an explicit atomic flag instead of a guessed progress value.
+- **Flash attention and DTW interaction documented.** whisper.cpp disables DTW when flash attention is active but still provides the token timing used for word cues.
+
 ## v3.0.0
 
 The largest Kikoe release so far. Word-level timing, speaker detection, editor operations, saved prompts, and CLI configuration all ship together. No model was removed.
