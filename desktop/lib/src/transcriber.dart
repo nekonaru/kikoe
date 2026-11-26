@@ -130,6 +130,7 @@ class Transcriber {
     int nThreads = 0,
     bool useGpu = false,
     String? vadModelPath,
+    int quality = 0,
   }) {
     _send({
       'type': 'transcribe',
@@ -142,6 +143,7 @@ class Transcriber {
       'nThreads': nThreads,
       'useGpu': useGpu,
       'vadModelPath': vadModelPath,
+      'quality': quality,
     });
   }
 
@@ -346,6 +348,7 @@ void _workerMain(SendPort readyPort) {
         options.ref.language = language;
         options.ref.translate = (msg['translate'] as bool) ? 1 : 0;
         options.ref.initialPrompt = promptPtr;
+        options.ref.quality = msg['quality'] as int? ?? 0;
 
         final rc = lib.transcribe(
           engine,

@@ -14,6 +14,7 @@ import 'src/l10n.dart';
 import 'src/about_screen.dart';
 import 'src/app_state.dart';
 import 'src/faq_screen.dart';
+import 'src/eta.dart';
 import 'src/history_screen.dart';
 import 'src/kikoe_theme.dart';
 import 'src/model_menu.dart';
@@ -323,6 +324,7 @@ class _KikoeHomeState extends State<KikoeHome> {
                         ? 'Decoding media…'
                         : state.progress > 0
                             ? 'Transcribing… ${state.progress}%'
+                                '${state.etaMs != null ? ' · ${tr('Estimated finish')} ${formatEtaLabel(state.etaMs!)}' : ''}'
                             : 'Transcribing…',
                     style: const TextStyle(fontSize: 12, color: kDim),
                   ),
@@ -720,6 +722,24 @@ class _OptionsSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionLabel(tr('Options')),
+          SectionLabel(tr('Speed and quality')),
+          DropdownButton<String>(
+            value: state.speedMode,
+            isExpanded: true,
+            dropdownColor: kSurface,
+            underline: const SizedBox.shrink(),
+            items: [
+              DropdownMenuItem(value: 'fast', child: Text(tr('Fast'))),
+              DropdownMenuItem(value: 'balanced', child: Text(tr('Balanced'))),
+              DropdownMenuItem(value: 'accurate', child: Text(tr('Accurate'))),
+            ],
+            onChanged: (v) {
+              if (v != null) state.setSpeedMode(v);
+            },
+          ),
+          Text(tr('A preset sets the model and VAD. Pick any model below to override.'),
+              style: const TextStyle(fontSize: 10, color: kDim)),
+          SizedBox(height: 10),
           Row(
             children: [
               Text(tr('Language'), style: TextStyle(fontSize: 12, color: kDim)),

@@ -26,6 +26,7 @@ struct TranscribeOptions {
     float no_speech_threshold = 0.6f; // above this, segments are likely silence
     bool vad = false;                // filter silence with whisper.cpp VAD
     std::string vad_model_path;      // required when vad is true
+    int quality = 0;                 // 0 balanced, 1 fast, 2 accurate (beam search)
 };
 
 using ProgressCallback = void (*)(int percent, void* user);

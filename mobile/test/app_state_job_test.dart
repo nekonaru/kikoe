@@ -25,6 +25,7 @@ class FakeTranscriber extends Transcriber {
     String initialPrompt = '',
     int nThreads = 0,
     String? vadModelPath,
+    int quality = 0,
   }) {}
 
   @override

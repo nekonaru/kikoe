@@ -5,6 +5,23 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v2.4.0
+
+Rilis kecepatan dan akurasi. Transkripsi kini bisa diatur dari UI, dan progres langsung disertai perkiraan selesai yang diukur.
+
+### Fitur baru
+
+- **Preset kecepatan dan kualitas.** Kedua aplikasi menyediakan Cepat, Seimbang, dan Akurat. Preset menentukan model awal, VAD, dan strategi dekoding. Semua model yang ada, termasuk `medium-q5_0` dan `large-v3-turbo-q5_0`, tetap ada di pemilih dan bisa menimpa preset kapan saja.
+- **Perkiraan selesai langsung.** Bar progres kini menampilkan estimasi waktu selesai di samping persentase. Nilainya dihitung dari progres yang benar-benar teramati, dirata-ratakan agar tidak loncat, dan disembunyikan sampai cukup data. Tahap dekoding tetap indeterminate karena decoder tidak melaporkan persentase.
+- **Mode Akurat memakai beam search.** `kk_options.quality` memilih dekoding greedy atau beam-5. CLI mendapat `--quality fast|balanced|accurate`; versi minor ABI menjadi 4.
+
+### Peningkatan
+
+- **Flash attention diaktifkan** pada konteks whisper, mengurangi memori puncak untuk audio panjang.
+- **Kosakata khusus terbawa ke setiap window dekoding** lewat `carry_initial_prompt`, sehingga nama dan istilah tetap benar jauh ke dalam rekaman panjang.
+- **Script benchmark** (`scripts/benchmark_transcribe.sh`) mencatat waktu tempuh per kombinasi model dan kualitas. Pengukuran lokal pada sampel JFK 11 detik: tiny 0,81 detik, small-q5_1 6,52 detik, small-q5_1 dengan VAD 6,23 detik, small-q5_1 dengan VAD dan beam-5 6,95 detik.
+- **Logika ETA berada di helper murni** dengan tes unit di kedua aplikasi. Rangkaian Android kini 18 tes, desktop 11.
+
 ## v2.3.1
 
 Rilis stabilitas dari audit runtime terhadap build Android yang sudah dirilis. Dua race nyata bisa melewati atau merusak transkripsi secara diam diam; keduanya diperbaiki dan diuji.

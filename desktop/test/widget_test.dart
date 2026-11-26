@@ -5,7 +5,7 @@ import 'package:kikoe_desktop/main.dart';
 
 void main() {
   testWidgets('Kikoe home renders the header, controls and the drop hint', (tester) async {
-    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.physicalSize = const Size(1400, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();

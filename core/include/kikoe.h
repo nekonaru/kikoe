@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #define KK_ABI_VERSION_MAJOR 0
-#define KK_ABI_VERSION_MINOR 3
+#define KK_ABI_VERSION_MINOR 4
 
 typedef struct kk_engine kk_engine;
 
@@ -56,10 +56,17 @@ typedef struct {
     const char* vad_model_path; // optional; may be NULL
 } kk_engine_params;
 
+/* Decoding quality. Balanced and Fast use greedy decoding; Accurate uses
+ * beam search, which is slower but reduces word errors on difficult audio. */
+#define KK_QUALITY_BALANCED 0
+#define KK_QUALITY_FAST     1
+#define KK_QUALITY_ACCURATE 2
+
 typedef struct {
     const char* language;       // "id", "en", "auto", ...; may be NULL for auto
     int         translate;      // 0 or 1
     const char* initial_prompt; // may be NULL
+    int         quality;        // KK_QUALITY_* ; 0 = balanced
 } kk_options;
 
 typedef struct {
@@ -74,7 +81,7 @@ typedef void (*kk_segment_cb)(const kk_segment* seg, void* user);
 /* Returns KK_ABI_VERSION_MAJOR * 100 + KK_ABI_VERSION_MINOR. */
 KK_API int kk_abi_version(void);
 
-/* Static, never NULL. For example "2.3.1". */
+/* Static, never NULL. For example "2.4.0". */
 KK_API const char* kk_version_string(void);
 
 /* 1 when this library was built with a GPU backend, 0 for CPU-only builds.
