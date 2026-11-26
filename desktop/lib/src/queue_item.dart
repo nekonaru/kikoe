@@ -1,13 +1,19 @@
 /// One file in the transcription queue.
 library;
 
+import 'transcriber.dart';
+
 enum QueueStatus { pending, transcribing, done, failed, cancelled }
 
 class Segment {
-  const Segment(this.startMs, this.endMs, this.text);
+  const Segment(this.startMs, this.endMs, this.text,
+      {this.confidence = 0, this.speaker = 0, this.words = const []});
   final int startMs;
   final int endMs;
   final String text;
+  final int confidence; // permille
+  final int speaker;
+  final List<TranscribedWord> words;
 }
 
 class QueueItem {

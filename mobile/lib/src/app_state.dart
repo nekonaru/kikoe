@@ -24,10 +24,14 @@ import 'history_store.dart';
 enum JobStage { idle, decoding, transcribing, done, failed, cancelled }
 
 class Segment {
-  const Segment(this.startMs, this.endMs, this.text);
+  const Segment(this.startMs, this.endMs, this.text,
+      {this.confidence = 0, this.speaker = 0, this.words = const []});
   final int startMs;
   final int endMs;
   final String text;
+  final int confidence; // permille
+  final int speaker;
+  final List<TranscribedWord> words;
 }
 
 class AppState extends ChangeNotifier {
@@ -76,6 +80,12 @@ class AppState extends ChangeNotifier {
   // Decoding quality: 0 balanced, 1 fast, 2 accurate (beam search).
   int quality = 0;
   String speedMode = 'balanced';
+  bool wordTimestamps = false;
+  bool diarize = false;
+
+  /// Saved prompt presets, keyed by display name.
+  final Map<String, String> promptLibrary = {};
+  String? activePromptName;
 
   // Live progress display. Derived from observed progress, never invented.
   int? etaMs;
@@ -214,6 +224,10 @@ class AppState extends ChangeNotifier {
   static const _kPrefsCustomModels = 'kikoe_custom_models';
   static const _kPrefsQuality = 'kikoe_quality';
   static const _kPrefsSpeedMode = 'kikoe_speed_mode';
+  static const _kPrefsWordTimestamps = 'kikoe_word_timestamps';
+  static const _kPrefsDiarize = 'kikoe_diarize';
+  static const _kPrefsPromptLibrary = 'kikoe_prompt_library';
+  static const _kPrefsActivePrompt = 'kikoe_active_prompt';
 
   Future<void> _loadSettings() async {
     try {
@@ -226,6 +240,19 @@ class AppState extends ChangeNotifier {
       autoSave = prefs.getBool(_kPrefsAutoSave) ?? autoSave;
       quality = prefs.getInt(_kPrefsQuality) ?? quality;
       speedMode = prefs.getString(_kPrefsSpeedMode) ?? speedMode;
+      wordTimestamps = prefs.getBool(_kPrefsWordTimestamps) ?? wordTimestamps;
+      diarize = prefs.getBool(_kPrefsDiarize) ?? diarize;
+      final rawPrompts = prefs.getString(_kPrefsPromptLibrary);
+      if (rawPrompts != null && rawPrompts.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(rawPrompts) as Map<String, dynamic>;
+          promptLibrary.clear();
+          decoded.forEach((k, v) => promptLibrary[k.toString()] = v.toString());
+        } catch (_) {
+          // Keep the library empty on corrupt data.
+        }
+      }
+      activePromptName = prefs.getString(_kPrefsActivePrompt);
       final rawCustom = prefs.getString(_kPrefsCustomModels);
       if (rawCustom != null && rawCustom.isNotEmpty) {
         try {
@@ -260,6 +287,14 @@ class AppState extends ChangeNotifier {
       await prefs.setBool(_kPrefsAutoSave, autoSave);
       await prefs.setInt(_kPrefsQuality, quality);
       await prefs.setString(_kPrefsSpeedMode, speedMode);
+      await prefs.setBool(_kPrefsWordTimestamps, wordTimestamps);
+      await prefs.setBool(_kPrefsDiarize, diarize);
+      await prefs.setString(_kPrefsPromptLibrary, jsonEncode(promptLibrary));
+      if (activePromptName == null) {
+        await prefs.remove(_kPrefsActivePrompt);
+      } else {
+        await prefs.setString(_kPrefsActivePrompt, activePromptName!);
+      }
       await prefs.setString(
           _kPrefsCustomModels,
           jsonEncode(customModels
@@ -408,6 +443,46 @@ class AppState extends ChangeNotifier {
     _saveSettings();
   }
 
+  /// Store the current prompt under a name and make it active.
+  void savePrompt(String name, String text) {
+    final key = name.trim();
+    if (key.isEmpty) return;
+    promptLibrary[key] = text.trim();
+    activePromptName = key;
+    initialPrompt = text.trim();
+    notifyListeners();
+    _saveSettings();
+  }
+
+  /// Load a saved prompt into the active input field.
+  void applyPrompt(String name) {
+    final text = promptLibrary[name];
+    if (text == null) return;
+    activePromptName = name;
+    initialPrompt = text;
+    notifyListeners();
+    _saveSettings();
+  }
+
+  void removePrompt(String name) {
+    promptLibrary.remove(name);
+    if (activePromptName == name) activePromptName = null;
+    notifyListeners();
+    _saveSettings();
+  }
+
+  void setWordTimestamps(bool value) {
+    wordTimestamps = value;
+    notifyListeners();
+    _saveSettings();
+  }
+
+  void setDiarize(bool value) {
+    diarize = value;
+    notifyListeners();
+    _saveSettings();
+  }
+
   void setLanguage(String value) {
     language = value;
     notifyListeners();
@@ -511,6 +586,8 @@ class AppState extends ChangeNotifier {
       initialPrompt: initialPrompt,
       vadModelPath: useVad && vadReady ? vadModelPath : null,
       quality: quality,
+      wordTimestamps: wordTimestamps,
+      diarize: diarize,
     );
   }
 
@@ -645,7 +722,14 @@ class AppState extends ChangeNotifier {
         _updateProgress(event.percent);
       case SegmentReady():
         if (!_isCurrentJob(event.id)) return;
-        segments.add(Segment(event.startMs, event.endMs, event.text));
+        segments.add(Segment(
+          event.startMs,
+          event.endMs,
+          event.text,
+          confidence: event.confidence,
+          speaker: event.speaker,
+          words: event.words,
+        ));
         notifyListeners();
       case TranscribeDone():
         if (!_isCurrentJob(event.id)) return;

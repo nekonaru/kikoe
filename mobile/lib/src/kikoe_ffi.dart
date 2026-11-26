@@ -74,6 +74,20 @@ typedef KKLastSegmentGetNative = Int32 Function(
 typedef KKLastSegmentGet = int Function(
     Pointer<Void> engine, int index, Pointer<KkSegment> outSegment);
 
+typedef KKLastSegmentConfidenceNative = Int32 Function(Pointer<Void> engine, Int32 index);
+typedef KKLastSegmentConfidence = int Function(Pointer<Void> engine, int index);
+
+typedef KKLastSegmentSpeakerNative = Int32 Function(Pointer<Void> engine, Int32 index);
+typedef KKLastSegmentSpeaker = int Function(Pointer<Void> engine, int index);
+
+typedef KKLastWordCountNative = Int32 Function(Pointer<Void> engine, Int32 index);
+typedef KKLastWordCount = int Function(Pointer<Void> engine, int index);
+
+typedef KKLastWordGetNative = Int32 Function(
+    Pointer<Void> engine, Int32 index, Int32 wordIndex, Pointer<KkWord> outWord);
+typedef KKLastWordGet = int Function(
+    Pointer<Void> engine, int index, int wordIndex, Pointer<KkWord> outWord);
+
 typedef KKFormatLastNative = Int32 Function(
     Pointer<Void> engine,
     Pointer<Utf8> format,
@@ -125,6 +139,19 @@ final class KkOptions extends Struct {
   external Pointer<Utf8> initialPrompt;
   @Int32()
   external int quality; // 0 balanced, 1 fast, 2 accurate
+  @Int32()
+  external int wordTimestamps;
+  @Int32()
+  external int diarize;
+}
+
+/// Mirrors struct kk_word from core/include/kikoe.h.
+final class KkWord extends Struct {
+  @Int64()
+  external int startMs;
+  @Int64()
+  external int endMs;
+  external Pointer<Utf8> text;
 }
 
 /// Mirrors struct kk_segment from core/include/kikoe.h.
@@ -163,6 +190,14 @@ class KikoeFFI {
         _lib.lookupFunction<KKLastSegmentCountNative, KKLastSegmentCount>('kk_last_segment_count');
     lastSegmentGet =
         _lib.lookupFunction<KKLastSegmentGetNative, KKLastSegmentGet>('kk_last_segment_get');
+    lastSegmentConfidence = _lib.lookupFunction<KKLastSegmentConfidenceNative,
+        KKLastSegmentConfidence>('kk_last_segment_confidence');
+    lastSegmentSpeaker = _lib.lookupFunction<KKLastSegmentSpeakerNative,
+        KKLastSegmentSpeaker>('kk_last_segment_speaker');
+    lastWordCount = _lib.lookupFunction<KKLastWordCountNative, KKLastWordCount>(
+        'kk_last_word_count');
+    lastWordGet = _lib.lookupFunction<KKLastWordGetNative, KKLastWordGet>(
+        'kk_last_word_get');
     formatLast = _lib.lookupFunction<KKFormatLastNative, KKFormatLast>('kk_format_last');
     engineFree = _lib.lookupFunction<KKEngineFreeNative, KKEngineFree>('kk_engine_free');
     errorString = _lib.lookupFunction<KKErrorStringNative, KKErrorString>('kk_error_string');
@@ -185,6 +220,10 @@ class KikoeFFI {
   late final KKLastProgress lastProgress;
   late final KKLastSegmentCount lastSegmentCount;
   late final KKLastSegmentGet lastSegmentGet;
+  late final KKLastSegmentConfidence lastSegmentConfidence;
+  late final KKLastSegmentSpeaker lastSegmentSpeaker;
+  late final KKLastWordCount lastWordCount;
+  late final KKLastWordGet lastWordGet;
   late final KKFormatLast formatLast;
   late final KKEngineFree engineFree;
   late final KKErrorString errorString;

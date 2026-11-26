@@ -33,6 +33,14 @@ std::string timestamp(int64_t ms, char ms_sep)
     return buf;
 }
 
+std::string speaker_prefix(int speaker)
+{
+    if (speaker <= 0) return "";
+    char buf[32];
+    std::snprintf(buf, sizeof buf, "[SPEAKER_%02d] ", speaker);
+    return buf;
+}
+
 std::string json_escape(const std::string& s)
 {
     std::string out;
@@ -97,7 +105,7 @@ std::string format_segments(const SegmentList& segments, OutputFormat format)
         for (const auto& s : segments) {
             const std::string t = trim_copy(s.text);
             if (t.empty()) continue;
-            out += t;
+            out += speaker_prefix(s.speaker) + t;
             out += '\n';
         }
         return out;
@@ -106,9 +114,17 @@ std::string format_segments(const SegmentList& segments, OutputFormat format)
         std::ostringstream out;
         size_t i = 1;
         for (const auto& s : segments) {
-            out << i++ << '\n';
-            out << timestamp(s.start_ms, ',') << " --> " << timestamp(s.end_ms, ',') << '\n';
-            out << trim_copy(s.text) << "\n\n";
+            if (!s.words.empty()) {
+                for (const auto& w : s.words) {
+                    out << i++ << '\n';
+                    out << timestamp(w.start_ms, ',') << " --> " << timestamp(w.end_ms, ',') << '\n';
+                    out << trim_copy(w.text) << "\n\n";
+                }
+            } else {
+                out << i++ << '\n';
+                out << timestamp(s.start_ms, ',') << " --> " << timestamp(s.end_ms, ',') << '\n';
+                out << speaker_prefix(s.speaker) << trim_copy(s.text) << "\n\n";
+            }
         }
         return out.str();
     }
@@ -116,8 +132,15 @@ std::string format_segments(const SegmentList& segments, OutputFormat format)
         std::ostringstream out;
         out << "WEBVTT\n\n";
         for (const auto& s : segments) {
-            out << timestamp(s.start_ms, '.') << " --> " << timestamp(s.end_ms, '.') << '\n';
-            out << trim_copy(s.text) << "\n\n";
+            if (!s.words.empty()) {
+                for (const auto& w : s.words) {
+                    out << timestamp(w.start_ms, '.') << " --> " << timestamp(w.end_ms, '.') << '\n';
+                    out << trim_copy(w.text) << "\n\n";
+                }
+            } else {
+                out << timestamp(s.start_ms, '.') << " --> " << timestamp(s.end_ms, '.') << '\n';
+                out << speaker_prefix(s.speaker) << trim_copy(s.text) << "\n\n";
+            }
         }
         return out.str();
     }

@@ -49,6 +49,8 @@ kikoe::TranscribeOptions to_transcribe_options(const kk_options* o)
         out.translate = o->translate != 0;
         if (o->initial_prompt) out.initial_prompt = o->initial_prompt;
         out.quality = (o->quality >= 0 && o->quality <= 2) ? o->quality : 0;
+        out.word_timestamps = o->word_timestamps != 0;
+        out.diarize = o->diarize != 0;
     }
     return out;
 }
@@ -62,7 +64,7 @@ int kk_abi_version(void)
 
 const char* kk_version_string(void)
 {
-    return "2.5.0";
+    return "3.0.0";
 }
 
 int kk_gpu_enabled(void)
@@ -274,6 +276,48 @@ int kk_last_segment_get(const kk_engine* engine, int index, kk_segment* out_segm
     out_segment->start_ms = seg.start_ms;
     out_segment->end_ms = seg.end_ms;
     out_segment->text = seg.text.c_str();
+    return KK_OK;
+}
+
+int kk_last_segment_confidence(const kk_engine* engine, int index)
+{
+    if (engine == nullptr || index < 0 ||
+        static_cast<size_t>(index) >= engine->last_segments.size()) {
+        return -1;
+    }
+    return static_cast<int>(engine->last_segments[static_cast<size_t>(index)].confidence * 1000.0f);
+}
+
+int kk_last_segment_speaker(const kk_engine* engine, int index)
+{
+    if (engine == nullptr || index < 0 ||
+        static_cast<size_t>(index) >= engine->last_segments.size()) {
+        return -1;
+    }
+    return engine->last_segments[static_cast<size_t>(index)].speaker;
+}
+
+int kk_last_word_count(const kk_engine* engine, int index)
+{
+    if (engine == nullptr || index < 0 ||
+        static_cast<size_t>(index) >= engine->last_segments.size()) {
+        return 0;
+    }
+    return static_cast<int>(engine->last_segments[static_cast<size_t>(index)].words.size());
+}
+
+int kk_last_word_get(const kk_engine* engine, int index, int word_index, kk_word* out_word)
+{
+    if (engine == nullptr || out_word == nullptr || index < 0 || word_index < 0 ||
+        static_cast<size_t>(index) >= engine->last_segments.size()) {
+        return KK_ERR_INVALID_ARGUMENT;
+    }
+    const auto& words = engine->last_segments[static_cast<size_t>(index)].words;
+    if (static_cast<size_t>(word_index) >= words.size()) return KK_ERR_INVALID_ARGUMENT;
+    const kikoe::Word& word = words[static_cast<size_t>(word_index)];
+    out_word->start_ms = word.start_ms;
+    out_word->end_ms = word.end_ms;
+    out_word->text = word.text.c_str();
     return KK_OK;
 }
 

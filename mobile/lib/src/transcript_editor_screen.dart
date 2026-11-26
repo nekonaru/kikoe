@@ -10,13 +10,9 @@ import 'package:flutter/material.dart';
 import 'kikoe_theme.dart';
 import 'l10n.dart';
 import 'transcript_editor_logic.dart';
+import 'transcript_ops.dart';
 
-class SegmentEntry {
-  SegmentEntry(this.startMs, this.endMs, this.text);
-  int startMs;
-  int endMs;
-  String text;
-}
+export 'transcript_ops.dart' show SegmentEntry;
 
 class TranscriptEditorScreen extends StatefulWidget {
   const TranscriptEditorScreen({
@@ -103,6 +99,48 @@ class _TranscriptEditorScreenState extends State<TranscriptEditorScreen> {
     _showSnack('${tr('Shifted by')} $milliseconds ms');
   }
 
+  void _cleanup() {
+    final temp = List.generate(
+      _working.length,
+      (i) => SegmentEntry(_working[i].startMs, _working[i].endMs, _controllers[i].text),
+    );
+    final changed = cleanupSegments(temp);
+    for (var i = 0; i < temp.length; i++) {
+      _controllers[i].text = temp[i].text;
+    }
+    setState(() {});
+    _showSnack('$changed ${tr('segments changed')}');
+  }
+
+  void _splitSegment(int index) {
+    _working[index].text = _controllers[index].text;
+    final mid = _working[index].startMs +
+        ((_working[index].endMs - _working[index].startMs) ~/ 2);
+    final right = splitSegment(_working[index], mid);
+    _working.insert(index + 1, right);
+    _controllers.insert(index + 1, TextEditingController(text: right.text));
+    setState(() {});
+  }
+
+  void _mergeWithNext(int index) {
+    if (index + 1 >= _working.length) return;
+    _working[index].text = _controllers[index].text;
+    _working[index + 1].text = _controllers[index + 1].text;
+    if (mergeSegments(_working, index)) {
+      _controllers[index].text = _working[index].text;
+      _controllers[index + 1].dispose();
+      _controllers.removeAt(index + 1);
+      setState(() {});
+    }
+  }
+
+  void _deleteSegment(int index) {
+    _controllers[index].dispose();
+    _controllers.removeAt(index);
+    _working.removeAt(index);
+    setState(() {});
+  }
+
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
@@ -184,6 +222,11 @@ class _TranscriptEditorScreenState extends State<TranscriptEditorScreen> {
         title: Text(tr('Edit transcript')),
         actions: [
           IconButton(
+            tooltip: tr('Clean repeated words'),
+            icon: const Icon(Icons.cleaning_services, color: kBrand),
+            onPressed: _cleanup,
+          ),
+          IconButton(
             tooltip: tr('Find and replace'),
             icon: Icon(_showTools ? Icons.find_replace : Icons.search,
                 color: kBrand),
@@ -208,7 +251,8 @@ class _TranscriptEditorScreenState extends State<TranscriptEditorScreen> {
                 child: _tools(),
               );
             }
-            final seg = _working[_showTools ? i - 1 : i];
+            final idx = _showTools ? i - 1 : i;
+            final seg = _working[idx];
             return Container(
               decoration: BoxDecoration(
                 color: kSurface,
@@ -218,10 +262,32 @@ class _TranscriptEditorScreenState extends State<TranscriptEditorScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${_formatMs(seg.startMs)} → ${_formatMs(seg.endMs)}',
-                    style: const TextStyle(
-                        fontSize: 10.5, color: kDim, letterSpacing: 1.1),
+                  Row(
+                    children: [
+                      Text(
+                        '${_formatMs(seg.startMs)} → ${_formatMs(seg.endMs)}',
+                        style: const TextStyle(
+                            fontSize: 10.5, color: kDim, letterSpacing: 1.1),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        tooltip: tr('Split segment'),
+                        icon: const Icon(Icons.call_split, size: 15, color: kDim),
+                        onPressed: () => _splitSegment(idx),
+                      ),
+                      IconButton(
+                        tooltip: tr('Merge with next'),
+                        icon: const Icon(Icons.merge_type, size: 15, color: kDim),
+                        onPressed: idx + 1 < _working.length
+                            ? () => _mergeWithNext(idx)
+                            : null,
+                      ),
+                      IconButton(
+                        tooltip: tr('Delete segment'),
+                        icon: const Icon(Icons.delete_outline, size: 15, color: kDim),
+                        onPressed: () => _deleteSegment(idx),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   TextField(

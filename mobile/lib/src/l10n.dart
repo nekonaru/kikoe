@@ -91,6 +91,18 @@ class L10n extends ChangeNotifier {
 }
 
 const Map<String, String> faqId = {
+    'Clean repeated words': 'Bersihkan kata berulang',
+    'Delete segment': 'Hapus segmen',
+    'Merge with next': 'Gabung dengan berikutnya',
+    'Prompt name': 'Nama prompt',
+    'Save': 'Simpan',
+    'Save prompt': 'Simpan prompt',
+    'Saved prompts': 'Prompt tersimpan',
+    'Split segment': 'Pisahkan segmen',
+    'Detect speakers': 'Deteksi pembicara',
+    'Label speaker changes (experimental)': 'Beri label perubahan pembicara (eksperimen)',
+    'Precise timing for every word (slower)': 'Timing presisi untuk setiap kata (lebih lambat)',
+    'Word timestamps': 'Timestamp kata',
     'No matches': 'Tidak ada hasil',
     'Search history': 'Cari riwayat',
     'A preset sets the model and VAD. Pick any model below to override.': 'Preset menentukan model dan VAD. Pilih model di bawah untuk menimpa.',

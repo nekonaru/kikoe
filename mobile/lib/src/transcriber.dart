@@ -14,6 +14,14 @@ import 'package:ffi/ffi.dart';
 
 import 'kikoe_ffi.dart';
 
+/// One timed word harvested from the engine after a decode.
+class TranscribedWord {
+  const TranscribedWord(this.startMs, this.endMs, this.text);
+  final int startMs;
+  final int endMs;
+  final String text;
+}
+
 sealed class TranscriberEvent {
   const TranscriberEvent();
 }
@@ -36,11 +44,15 @@ class TranscribeProgress extends TranscriberEvent {
 }
 
 class SegmentReady extends TranscriberEvent {
-  const SegmentReady(this.id, this.startMs, this.endMs, this.text);
+  const SegmentReady(this.id, this.startMs, this.endMs, this.text,
+      {this.confidence = 0, this.speaker = 0, this.words = const []});
   final String id;
   final int startMs;
   final int endMs;
   final String text;
+  final int confidence; // average token probability in permille
+  final int speaker;
+  final List<TranscribedWord> words;
 }
 
 class TranscribeDone extends TranscriberEvent {
@@ -113,6 +125,8 @@ class Transcriber {
     int nThreads = 0,
     String? vadModelPath,
     int quality = 0,
+    bool wordTimestamps = false,
+    bool diarize = false,
   }) {
     _send({
       'type': 'transcribePcm',
@@ -125,6 +139,8 @@ class Transcriber {
       'nThreads': nThreads,
       'vadModelPath': vadModelPath,
       'quality': quality,
+      'wordTimestamps': wordTimestamps,
+      'diarize': diarize,
     });
   }
 
@@ -156,6 +172,11 @@ TranscriberEvent? _eventFromMap(Map<String, dynamic> map) {
         map['startMs'] as int,
         map['endMs'] as int,
         map['text'] as String,
+        confidence: map['confidence'] as int? ?? 0,
+        speaker: map['speaker'] as int? ?? 0,
+        words: (map['words'] as List<dynamic>? ?? [])
+            .map((w) => w as TranscribedWord)
+            .toList(),
       );
     case 'transcribeDone':
       return TranscribeDone(map['id'] as String);
@@ -290,6 +311,8 @@ void _workerMain(SendPort readyPort) {
         options.ref.translate = (msg['translate'] as bool) ? 1 : 0;
         options.ref.initialPrompt = promptPtr;
         options.ref.quality = msg['quality'] as int? ?? 0;
+        options.ref.wordTimestamps = ((msg['wordTimestamps'] as bool?) ?? false) ? 1 : 0;
+        options.ref.diarize = ((msg['diarize'] as bool?) ?? false) ? 1 : 0;
 
         final rc = lib.transcribePcm(
           engine,
@@ -312,12 +335,28 @@ void _workerMain(SendPort readyPort) {
           for (var i = 0; i < count; i++) {
             final src = calloc<KkSegment>();
             if (lib.lastSegmentGet(engine, i, src) == kKkOk) {
+              final words = <TranscribedWord>[];
+              final wordCount = lib.lastWordCount(engine, i);
+              for (var w = 0; w < wordCount; w++) {
+                final out = calloc<KkWord>();
+                if (lib.lastWordGet(engine, i, w, out) == kKkOk) {
+                  words.add(TranscribedWord(
+                    out.ref.startMs,
+                    out.ref.endMs,
+                    out.ref.text.toDartString(),
+                  ));
+                }
+                calloc.free(out);
+              }
               emit({
                 'type': 'segment',
                 'id': id,
                 'startMs': src.ref.startMs,
                 'endMs': src.ref.endMs,
                 'text': src.ref.text.toDartString(),
+                'confidence': lib.lastSegmentConfidence(engine, i),
+                'speaker': lib.lastSegmentSpeaker(engine, i),
+                'words': words,
               });
             }
             calloc.free(src);

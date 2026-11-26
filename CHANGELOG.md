@@ -5,6 +5,26 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v3.0.0
+
+The largest Kikoe release so far. Word-level timing, speaker detection, editor operations, saved prompts, and CLI configuration all ship together. No model was removed.
+
+### New features
+
+- **Word-level timestamps.** Both apps and the CLI can collect timing for every word. SRT and VTT exports use word cues when this is enabled. The CLI flag is `--word-timestamps`.
+- **Speaker detection.** Tinydiarize labels speaker turns as `SPEAKER_00`, `SPEAKER_01`, and so on. Both apps expose a toggle; CLI uses `--diarize`.
+- **Editor operations.** Split a segment at its midpoint, merge with the next segment, delete a segment, and clean repeated words that Whisper sometimes hallucinates. All operations are pure helpers with unit tests.
+- **Prompt library.** Save the current custom vocabulary under a name, switch between presets, and remove them. Prompts persist locally.
+- **CLI configuration file.** `kikoe.toml` supplies defaults for model, language, quality, VAD, prompt, format and threads. Explicit flags still override it. Use `--config FILE` for another path.
+- **CLI prompt file.** `--prompt-file FILE` reads a multi-line initial prompt from disk.
+- **C API accessors.** `kk_last_segment_confidence`, `kk_last_segment_speaker`, `kk_last_word_count` and `kk_last_word_get` expose the new data. ABI minor version is 5.
+
+### Improvements
+
+- **Flash attention and carried prompts** from v2.4.0 remain active.
+- **Confidence is measured**, not guessed: it is the average token probability from whisper.cpp.
+- **Android suite is now 29 tests, desktop 21**, including new coverage for split, merge, cleanup and repeated-word removal.
+
 ## v2.5.0
 
 A runtime audit release. Two progress anomalies were fixed and history became searchable.

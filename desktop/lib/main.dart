@@ -389,6 +389,24 @@ class _ControlPanel extends StatelessWidget {
           ),
           SizedBox(height: 6),
           SwitchListTile(
+            value: s.wordTimestamps,
+            onChanged: s.setWordTimestamps,
+            title: Text(tr('Word timestamps')),
+            subtitle: Text(tr('Precise timing for every word (slower)'),
+                style: const TextStyle(fontSize: 11)),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            value: s.diarize,
+            onChanged: s.setDiarize,
+            title: Text(tr('Detect speakers')),
+            subtitle: Text(tr('Label speaker changes (experimental)'),
+                style: const TextStyle(fontSize: 11)),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
             value: s.translate,
             onChanged: s.setTranslate,
             title: Text(tr('Translate to English')),
@@ -417,6 +435,66 @@ class _ControlPanel extends StatelessWidget {
               style: TextStyle(fontSize: 10, color: kDim, letterSpacing: 0.6)),
           const SizedBox(height: 4),
           _PromptField(state: s),
+
+          SizedBox(height: 6),
+          if (s.promptLibrary.isNotEmpty)
+            DropdownButton<String>(
+              value: s.activePromptName,
+              hint: Text(tr('Saved prompts')),
+              isExpanded: true,
+              dropdownColor: kSurface,
+              underline: const SizedBox.shrink(),
+              items: s.promptLibrary.keys
+                  .map((k) => DropdownMenuItem(
+                        value: k,
+                        child: Text(k, overflow: TextOverflow.ellipsis),
+                      ))
+                  .toList(),
+              onChanged: (v) {
+                if (v != null) s.applyPrompt(v);
+              },
+            ),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: () async {
+                  final controller = TextEditingController();
+                  final name = await showDialog<String>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: Text(tr('Save prompt')),
+                      content: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        decoration: InputDecoration(labelText: tr('Prompt name')),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: Text(tr('Cancel')),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.of(ctx).pop(controller.text),
+                          child: Text(tr('Save')),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (name != null && name.trim().isNotEmpty) {
+                    s.savePrompt(name, s.initialPrompt);
+                  }
+                },
+                icon: const Icon(Icons.bookmark_add_outlined, size: 16),
+                label: Text(tr('Save prompt')),
+              ),
+              if (s.activePromptName != null)
+                IconButton(
+                  tooltip: 'Delete prompt',
+                  icon: const Icon(Icons.delete_outline, size: 16, color: kDim),
+                  onPressed: () => s.removePrompt(s.activePromptName!),
+                ),
+            ],
+          ),
           if (s.downloadError != null) ...[
             const SizedBox(height: 4),
             Row(
