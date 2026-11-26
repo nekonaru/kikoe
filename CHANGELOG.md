@@ -5,6 +5,21 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v2.3.1
+
+A stability release from a runtime audit of the released Android build. Two real races could silently corrupt or skip a transcription; both are fixed and covered by tests.
+
+### Bug fixes
+
+- **Share now always auto-starts when the model is cached.** A share that opened the app could be handled before `ensureStarted()` loaded the saved model and created the model directory. `selectedModelCached` was still false, so the file loaded but transcription never started. Share handling now waits for startup and replays the newest pending batch once the engine is ready.
+- **Stale job events can no longer pollute a new transcript.** If a new share arrived while a job was running, the old worker's segment, progress and done events were applied to the new job by id-less handling. Worker events are now correlated with an active job id; events from a superseded job are ignored, and changing the input cancels the job still running.
+
+### Improvements
+
+- **`ShareHandler` in the Android app** makes the startup/share ordering explicit and testable.
+- **`AppState` accepts an injected `Transcriber`** so worker events can be simulated in unit tests.
+- **Seven new tests** cover share replay ordering and stale event filtering; the Android suite now runs 14 tests.
+
 ## v2.3.0
 
 A real post-transcription workflow release: fix repeated words and subtitle drift without leaving the editor.

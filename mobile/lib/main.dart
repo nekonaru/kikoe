@@ -17,6 +17,7 @@ import 'src/faq_screen.dart';
 import 'src/history_screen.dart';
 import 'src/kikoe_theme.dart';
 import 'src/model_menu.dart';
+import 'src/share_handler.dart';
 import 'src/transcript_editor_screen.dart';
 
 int _wordCount(List<dynamic> segments) {
@@ -55,36 +56,33 @@ class KikoeApp extends StatefulWidget {
 
 class _KikoeAppState extends State<KikoeApp> {
   late final AppState s;
+  late final ShareHandler _share;
 
   @override
   void initState() {
     super.initState();
     s = widget.state ?? AppState();
-    s.ensureStarted();
+    _share = ShareHandler(s);
+    // Startup loads settings, creates the model dir and starts the engine.
+    // Shares are replayed afterwards so auto-start sees the saved model.
+    s.ensureStarted().whenComplete(_share.markStartupComplete);
     _listenForSharedMedia();
   }
 
   Future<void> _listenForSharedMedia() async {
+    // Subscribe early so a share during startup is not missed.
+    ReceiveSharingIntent.instance.getMediaStream().listen((files) {
+      if (files.isNotEmpty) {
+        _share.handle(files.map((f) => f.path).toList());
+      }
+    });
     try {
       final initial = await ReceiveSharingIntent.instance.getInitialMedia();
       if (initial.isNotEmpty) {
-        _loadSharedList(initial.map((f) => f.path).toList());
+        _share.handle(initial.map((f) => f.path).toList());
       }
     } catch (e) {
       debugPrint('share intent read failed: $e');
-    }
-    ReceiveSharingIntent.instance.getMediaStream().listen((files) {
-      if (files.isNotEmpty) {
-        _loadSharedList(files.map((f) => f.path).toList());
-      }
-    });
-  }
-
-  void _loadSharedList(List<String> paths) {
-    s.setInputs(paths);
-    // Auto-start when a file arrives via share; the user asked for it.
-    if (s.selectedModelCached) {
-      s.transcribe();
     }
   }
 

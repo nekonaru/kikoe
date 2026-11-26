@@ -5,6 +5,21 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v2.3.1
+
+Rilis stabilitas dari audit runtime terhadap build Android yang sudah dirilis. Dua race nyata bisa melewati atau merusak transkripsi secara diam diam; keduanya diperbaiki dan diuji.
+
+### Perbaikan bug
+
+- **Share kini selalu auto-start saat model tersimpan.** Share yang membuka aplikasi bisa diproses sebelum `ensureStarted()` memuat model tersimpan dan membuat direktori model. `selectedModelCached` masih bernilai false, sehingga file termuat tetapi transkripsi tidak pernah dimulai. Penanganan share kini menunggu startup dan memutar ulang batch terbaru setelah engine siap.
+- **Event job lama tidak bisa lagi mencemari transkrip baru.** Jika share baru masuk saat job berjalan, event segmen, progres, dan selesai dari worker lama diterapkan ke job baru karena penanganan tanpa id. Event worker kini dikorelasikan dengan id job aktif; event dari job yang sudah digantikan diabaikan, dan perubahan input membatalkan job yang masih berjalan.
+
+### Peningkatan
+
+- **`ShareHandler` di aplikasi Android** membuat urutan startup/share menjadi jelas dan dapat diuji.
+- **`AppState` menerima `Transcriber` yang disuntikkan** sehingga event worker bisa disimulasikan dalam tes unit.
+- **Tujuh tes baru** mencakup urutan pemutaran ulang share dan filter event lama; rangkaian tes Android kini menjalankan 14 tes.
+
 ## v2.3.0
 
 Rilis alur kerja pasca-transkripsi yang nyata: perbaiki kata yang berulang dan pergeseran subtitle tanpa meninggalkan editor.
