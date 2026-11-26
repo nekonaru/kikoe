@@ -5,6 +5,23 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v2.5.0
+
+Rilis hasil audit runtime. Dua anomali progres diperbaiki dan riwayat kini bisa dicari.
+
+### Fitur baru
+
+- **Cari riwayat.** Kedua aplikasi menyaring transkripsi tersimpan berdasarkan nama file atau isi transkrip, tanpa membedakan huruf besar/kecil. Query kosong menampilkan semua; query tanpa hasil menampilkan kondisi kosong yang jelas.
+
+### Perbaikan bug
+
+- **Perkiraan selesai tidak lagi menghitung waktu dekoding media.** Jam kini dimulai pada persentase transkripsi pertama yang nyata. Dekoder tidak melaporkan persentase, sehingga memasukkannya melebih-lebihkan estimasi pada video panjang.
+- **Engine yang dipakai ulang tidak bisa menampilkan 100 persen lama.** Nilai progres di luar tahap transkripsi diabaikan di kedua aplikasi, dan desktop menunggu persentase nyata pertama sebelum menyalakan jam.
+
+### Peningkatan
+
+- **`historyMatches` adalah helper murni** dengan tes unit di kedua aplikasi. Rangkaian Android kini 23 tes, desktop 15.
+
 ## v2.4.0
 
 Rilis kecepatan dan akurasi. Transkripsi kini bisa diatur dari UI, dan progres langsung disertai perkiraan selesai yang diukur.

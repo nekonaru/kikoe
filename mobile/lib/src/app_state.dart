@@ -97,6 +97,9 @@ class AppState extends ChangeNotifier {
   Timer? _progressTimer;
 
   void _updateProgress(int pct) {
+    // Reused engines keep the previous job's percentage until the new decode
+    // starts. Progress outside the transcribing stage is therefore stale.
+    if (stage != JobStage.transcribing) return;
     progress = pct;
     final started = _jobStarted;
     if (started != null) {
@@ -115,6 +118,10 @@ class AppState extends ChangeNotifier {
     final addr = _enginePtr;
     if (addr == null) return;
     _progressTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+      // A reused engine keeps the previous job's percentage until the new
+      // decode starts. Ignore polling outside the transcribing stage so that
+      // stale value can never flash 100 percent on a fresh job.
+      if (stage != JobStage.transcribing) return;
       try {
         final lib = KikoeFFI.load();
         final pct = lib.lastProgress(Pointer<Void>.fromAddress(addr));
@@ -465,7 +472,7 @@ class AppState extends ChangeNotifier {
 
     final jobId = _jobId(path);
     activeJobId = jobId;
-    _jobStarted = DateTime.now();
+    _jobStarted = null;
     etaMs = null;
     stage = JobStage.decoding;
     progress = 0;
@@ -488,6 +495,9 @@ class AppState extends ChangeNotifier {
     // cleared activeJobId, so drop this stale job instead of running it.
     if (activeJobId != jobId) return;
 
+    // Start the clock here, not before decoding. Media decode emits no
+    // percentage, so counting it would inflate the finish estimate.
+    _jobStarted = DateTime.now();
     stage = JobStage.transcribing;
     notifyListeners();
     await NotificationService.instance.showProgress(0);

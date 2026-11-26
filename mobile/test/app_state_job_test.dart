@@ -66,10 +66,23 @@ void main() {
     expect(state.stage, JobStage.done);
   });
 
+  test('progress reported before transcribing is ignored', () async {
+    final transcriber = FakeTranscriber();
+    final state = AppState(transcriber: transcriber);
+    state.activeJobId = 'current';
+    state.stage = JobStage.decoding;
+    state.progress = 0;
+
+    transcriber.controller.add(const TranscribeProgress('current', 100));
+    await pumpEventQueue();
+    expect(state.progress, 0);
+  });
+
   test('stale progress does not overwrite current progress', () async {
     final transcriber = FakeTranscriber();
     final state = AppState(transcriber: transcriber);
     state.activeJobId = 'current';
+    state.stage = JobStage.transcribing;
     state.progress = 40;
 
     transcriber.controller.add(const TranscribeProgress('stale', 95));
