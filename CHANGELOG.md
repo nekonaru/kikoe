@@ -5,6 +5,23 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v2.5.0
+
+A runtime audit release. Two progress anomalies were fixed and history became searchable.
+
+### New features
+
+- **Search history.** Both apps filter saved transcriptions by file name or transcript text, case-insensitively. An empty query shows everything; a query with no matches shows an explicit empty state.
+
+### Bug fixes
+
+- **Finish estimate no longer counts media decoding.** The clock now starts at the first real transcription percentage. Decoding reports no percentage, so counting it inflated the estimate on long videos.
+- **A reused engine can no longer flash a stale 100 percent.** Progress values outside the transcribing stage are ignored in both apps, and the desktop app waits for the first real percentage before starting its clock.
+
+### Improvements
+
+- **`historyMatches` is a pure helper** with unit tests in both apps. Android suite is now 23 tests, desktop 15.
+
 ## v2.4.0
 
 A speed and accuracy release. Transcription can now be tuned from the UI, and live progress includes a measured finish estimate.

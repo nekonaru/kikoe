@@ -91,6 +91,8 @@ class L10n extends ChangeNotifier {
 }
 
 const Map<String, String> faqId = {
+    'No matches': 'Tidak ada hasil',
+    'Search history': 'Cari riwayat',
     'A preset sets the model and VAD. Pick any model below to override.': 'Preset menentukan model dan VAD. Pilih model di bawah untuk menimpa.',
     'Accurate': 'Akurat',
     'Balanced': 'Seimbang',

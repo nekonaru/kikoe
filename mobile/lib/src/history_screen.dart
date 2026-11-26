@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:path/path.dart' as p;
 
+import 'history_search.dart';
 import 'history_store.dart';
 import 'kikoe_theme.dart';
 
@@ -23,11 +24,19 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   late Future<List<HistoryEntry>> _future;
+  final _search = TextEditingController();
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
     _reload();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
   }
 
   void _reload() {
@@ -49,34 +58,63 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ],
       ),
       body: SafeArea(
-        child: FutureBuilder<List<HistoryEntry>>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return Center(child: CircularProgressIndicator(color: kBrand));
-            }
-            final entries = snapshot.data ?? const <HistoryEntry>[];
-            if (entries.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.history, size: 52, color: kDim),
-                    SizedBox(height: 12),
-                    Text(tr('Nothing yet'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kText)),
-                    SizedBox(height: 4),
-                    Text(tr('Your transcriptions will appear here.'), style: TextStyle(fontSize: 12, color: kDim)),
-                  ],
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+              child: TextField(
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+                style: const TextStyle(fontSize: 13, color: kText),
+                decoration: InputDecoration(
+                  hintText: tr('Search history'),
+                  hintStyle: const TextStyle(fontSize: 12, color: kDim),
+                  prefixIcon: const Icon(Icons.search, size: 18, color: kDim),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kSurface2),
+                  ),
                 ),
-              );
-            }
-            return ListView.separated(
-              padding: const EdgeInsets.all(14),
-              itemCount: entries.length,
-              separatorBuilder: (_, _) => SizedBox(height: 10),
-              itemBuilder: (context, i) => _HistoryTile(entry: entries[i], onChanged: _reload),
-            );
-          },
+              ),
+            ),
+            Expanded(
+              child: FutureBuilder<List<HistoryEntry>>(
+                future: _future,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return Center(child: CircularProgressIndicator(color: kBrand));
+                  }
+                  final entries = snapshot.data ?? const <HistoryEntry>[];
+                  if (entries.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.history, size: 52, color: kDim),
+                          SizedBox(height: 12),
+                          Text(tr('Nothing yet'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: kText)),
+                          SizedBox(height: 4),
+                          Text(tr('Your transcriptions will appear here.'), style: TextStyle(fontSize: 12, color: kDim)),
+                        ],
+                      ),
+                    );
+                  }
+                  final visible = entries
+                      .where((e) => historyMatches(e.fileName, e.txt(), _query))
+                      .toList();
+                  if (visible.isEmpty) {
+                    return Center(child: Text(tr('No matches'), style: const TextStyle(color: kDim)));
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(14),
+                    itemCount: visible.length,
+                    separatorBuilder: (_, _) => SizedBox(height: 10),
+                    itemBuilder: (context, i) => _HistoryTile(entry: visible[i], onChanged: _reload),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );

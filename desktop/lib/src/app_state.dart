@@ -83,6 +83,13 @@ class AppState extends ChangeNotifier {
   int? _currentEnginePtr() => _enginePtr;
 
   void _setActiveProgress(int pct) {
+    // The worker decodes media before reporting progress. Start the ETA clock
+    // at the first real percentage, and never accept a stale 100 from a
+    // reused engine before that point.
+    if (_jobStarted == null) {
+      if (pct <= 0 || pct >= 100) return;
+      _jobStarted = DateTime.now();
+    }
     var changed = false;
     for (final item in items) {
       if (item.status == QueueStatus.transcribing && item.progress != pct) {
@@ -319,7 +326,7 @@ class AppState extends ChangeNotifier {
     if (next == null) return;
 
     busy = true;
-    _jobStarted = DateTime.now();
+    _jobStarted = null;
     etaMs = null;
     next.status = QueueStatus.transcribing;
     next.progress = 0;
