@@ -100,8 +100,8 @@ std::unique_ptr<Engine> Engine::create(const EngineOptions& options, ErrorCode& 
         // Flash attention lowers peak memory and is faster for long audio on
         // both CPU and GPU backends. whisper.cpp ignores it when unsupported.
         cparams.flash_attn = true;
-        // Required for token level alignment. It only costs time when token
-        // timestamps are actually requested in a decode call.
+        // Asked for token level alignment. whisper.cpp disables DTW when flash
+        // attention is on, but still provides token timing for word cues.
         cparams.dtw_token_timestamps = true;
 
         whisper_context* ctx = whisper_init_from_file_with_params(options.model_path.c_str(), cparams);

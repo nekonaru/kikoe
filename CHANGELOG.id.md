@@ -5,6 +5,22 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v3.1.0
+
+Gelombang terakhir program v3, berfokus pada alur kerja CLI.
+
+### Fitur baru
+
+- **Dry run.** `--dry-run` mendekode input dan melaporkan durasi audio, model yang dipilih, dan format keluaran tanpa melakukan transkripsi. Fitur ini menyatakan bahwa waktu bergantung pada perangkat dan model, bukan membuat perkiraan rekaan.
+- **Output benchmark.** `--benchmark` mencetak waktu tempuh yang benar-benar terukur untuk tiap transkripsi di mesin saat ini.
+- **Mode watch.** `--watch DIR` memeriksa direktori tiap dua detik dan mentranskrip file baru setelah ukurannya stabil. Ctrl+C menghentikan pemantauan.
+
+### Peningkatan
+
+- **Pemrosesan per file dipisahkan** dari loop utama CLI, sehingga mode batch dan watch memakai jalur yang sama dan tidak bisa berbeda perilaku.
+- **Pembatalan di mode watch** memakai flag atomik eksplisit, bukan tebakan dari nilai progres.
+- **Interaksi flash attention dan DTW didokumentasikan.** whisper.cpp mematikan DTW saat flash attention aktif tetapi tetap memberikan timing token yang dipakai untuk cue kata.
+
 ## v3.0.0
 
 Rilis Kikoe terbesar sejauh ini. Timing per kata, deteksi pembicara, operasi editor, prompt tersimpan, dan konfigurasi CLI hadir bersamaan. Tidak ada model yang dihapus.
