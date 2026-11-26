@@ -16,6 +16,7 @@ import 'model_menu.dart';
 import 'queue_item.dart';
 import 'transcript.dart';
 import 'transcriber.dart';
+import 'eta.dart';
 import 'history_store.dart';
 
 class AppState extends ChangeNotifier {
@@ -39,6 +40,14 @@ class AppState extends ChangeNotifier {
   String initialPrompt = '';
   bool autoSave = false; // save each finished transcript in saveFormat
   bool useVad = false;
+
+  // Decoding quality: 0 balanced, 1 fast, 2 accurate (beam search).
+  int quality = 0;
+  String speedMode = 'balanced';
+
+  // Live ETA for the active job, derived from observed progress.
+  int? etaMs;
+  DateTime? _jobStarted;
 
   /// null = default (Downloads/kikoe on Windows, ~/Downloads/kikoe elsewhere).
   String? customOutDir;
@@ -73,6 +82,26 @@ class AppState extends ChangeNotifier {
 
   int? _currentEnginePtr() => _enginePtr;
 
+  void _setActiveProgress(int pct) {
+    var changed = false;
+    for (final item in items) {
+      if (item.status == QueueStatus.transcribing && item.progress != pct) {
+        item.progress = pct;
+        changed = true;
+      }
+    }
+    final before = etaMs;
+    final started = _jobStarted;
+    if (started != null) {
+      final sample = estimateRemainingMs(
+        DateTime.now().difference(started).inMilliseconds,
+        pct,
+      );
+      if (sample != null) etaMs = smoothEtaMs(etaMs, sample);
+    }
+    if (changed || before != etaMs) notifyListeners();
+  }
+
   void _startProgressPolling() {
     _progressTimer?.cancel();
     final addr = _currentEnginePtr();
@@ -82,14 +111,7 @@ class AppState extends ChangeNotifier {
         final lib = KikoeFFI.load();
         final pct = lib.lastProgress(Pointer<Void>.fromAddress(addr));
         if (pct < 0 || pct > 100) return;
-        var changed = false;
-        for (final item in items) {
-          if (item.status == QueueStatus.transcribing && item.progress != pct) {
-            item.progress = pct;
-            changed = true;
-          }
-        }
-        if (changed) notifyListeners();
+        _setActiveProgress(pct);
       } catch (_) {
         // If FFI is unavailable we simply keep the old indeterminate display.
       }
@@ -188,6 +210,8 @@ class AppState extends ChangeNotifier {
   static const _kPrefsPrompt = 'kikoe_initial_prompt';
   static const _kPrefsAutoSave = 'kikoe_auto_save';
   static const _kPrefsCustomModels = 'kikoe_custom_models';
+  static const _kPrefsQuality = 'kikoe_quality';
+  static const _kPrefsSpeedMode = 'kikoe_speed_mode';
 
   Future<void> _loadSettings() async {
     try {
@@ -201,6 +225,8 @@ class AppState extends ChangeNotifier {
       useVad = prefs.getBool(_kPrefsVad) ?? useVad;
       autoSave = prefs.getBool(_kPrefsAutoSave) ?? autoSave;
       initialPrompt = prefs.getString(_kPrefsPrompt) ?? initialPrompt;
+      quality = prefs.getInt(_kPrefsQuality) ?? quality;
+      speedMode = prefs.getString(_kPrefsSpeedMode) ?? speedMode;
       final rawCustom = prefs.getString(_kPrefsCustomModels);
       if (rawCustom != null && rawCustom.isNotEmpty) {
         try {
@@ -237,6 +263,8 @@ class AppState extends ChangeNotifier {
       await prefs.setString(_kPrefsFormat, saveFormat);
       await prefs.setBool(_kPrefsVad, useVad);
       await prefs.setBool(_kPrefsAutoSave, autoSave);
+      await prefs.setInt(_kPrefsQuality, quality);
+      await prefs.setString(_kPrefsSpeedMode, speedMode);
       if (initialPrompt.isEmpty) {
         await prefs.remove(_kPrefsPrompt);
       } else {
@@ -291,6 +319,8 @@ class AppState extends ChangeNotifier {
     if (next == null) return;
 
     busy = true;
+    _jobStarted = DateTime.now();
+    etaMs = null;
     next.status = QueueStatus.transcribing;
     next.progress = 0;
     notifyListeners();
@@ -305,6 +335,7 @@ class AppState extends ChangeNotifier {
       useGpu: useGpu,
       initialPrompt: initialPrompt,
       vadModelPath: useVad && vadReady ? vadModelPath : null,
+      quality: quality,
     );
   }
 
@@ -360,6 +391,33 @@ class AppState extends ChangeNotifier {
   void setModel(String name) {
     modelName = name;
     downloadError = null;
+    notifyListeners();
+    _saveSettings();
+  }
+
+  /// Apply one of the three speed and quality presets. Every registry model,
+  /// including medium and large turbo, stays available in the picker.
+  void setSpeedMode(String mode) {
+    speedMode = mode;
+    useVad = true;
+    switch (mode) {
+      case 'fast':
+        quality = 1;
+        modelName = 'base-q5_1';
+        break;
+      case 'accurate':
+        quality = 2;
+        modelName = 'small-q5_1';
+        break;
+      default:
+        speedMode = 'balanced';
+        quality = 0;
+        modelName = 'small-q5_1';
+    }
+    if (!vadReady && !downloads.contains(vadModelName)) {
+      downloads.add(vadModelName);
+      transcriber.downloadModel(vadModelName);
+    }
     notifyListeners();
     _saveSettings();
   }
@@ -475,10 +533,8 @@ class AppState extends ChangeNotifier {
         downloadError = 'Download of ${event.name} failed: ${event.message}';
         notifyListeners();
       case TranscribeProgress():
-        final item = _find(event.id);
-        if (item != null) {
-          item.progress = event.percent;
-          notifyListeners();
+        if (event.id.isEmpty || _find(event.id) != null) {
+          _setActiveProgress(event.percent);
         }
       case SegmentReady():
         final item = _find(event.id);
@@ -501,6 +557,8 @@ class AppState extends ChangeNotifier {
           if (autoSave) saveItem(item, saveFormat);
         }
         busy = false;
+        _jobStarted = null;
+        etaMs = null;
         _stopProgressPolling();
         notifyListeners();
         start(); // drain the queue
@@ -511,6 +569,8 @@ class AppState extends ChangeNotifier {
           item.error = event.message;
         }
         busy = false;
+        _jobStarted = null;
+        etaMs = null;
         _stopProgressPolling();
         notifyListeners();
         start();

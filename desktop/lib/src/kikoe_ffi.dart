@@ -124,6 +124,8 @@ final class KkOptions extends Struct {
   @Int32()
   external int translate;
   external Pointer<Utf8> initialPrompt;
+  @Int32()
+  external int quality; // 0 balanced, 1 fast, 2 accurate
 }
 
 /// Mirrors struct kk_segment from core/include/kikoe.h.

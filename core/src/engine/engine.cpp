@@ -61,6 +61,9 @@ std::unique_ptr<Engine> Engine::create(const EngineOptions& options, ErrorCode& 
     try {
         whisper_context_params cparams = whisper_context_default_params();
         cparams.use_gpu = options.use_gpu;
+        // Flash attention lowers peak memory and is faster for long audio on
+        // both CPU and GPU backends. whisper.cpp ignores it when unsupported.
+        cparams.flash_attn = true;
 
         whisper_context* ctx = whisper_init_from_file_with_params(options.model_path.c_str(), cparams);
         if (ctx == nullptr) {
@@ -139,7 +142,12 @@ ErrorCode Engine::transcribe_impl(const float* samples,
     // whisper_full_default_params() fills every field with the OpenAI defaults.
     // We then override only what Kikoe needs. The abort callback is how we
     // implement cancellation: whisper.cpp checks it in its compute loop.
-    whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+    const bool accurate = options.quality == 2;
+    whisper_full_params wparams = whisper_full_default_params(
+        accurate ? WHISPER_SAMPLING_BEAM_SEARCH : WHISPER_SAMPLING_GREEDY);
+    if (accurate) wparams.beam_search.beam_size = 5;
+    // Carry custom vocabulary into every decode window, not just the first.
+    wparams.carry_initial_prompt = true;
     wparams.n_threads = n_threads_;
     wparams.translate = options.translate;
     wparams.language = options.language.empty() ? "auto" : options.language.c_str();

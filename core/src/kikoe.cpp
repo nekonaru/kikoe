@@ -48,6 +48,7 @@ kikoe::TranscribeOptions to_transcribe_options(const kk_options* o)
         if (o->language && o->language[0] != '\0') out.language = o->language;
         out.translate = o->translate != 0;
         if (o->initial_prompt) out.initial_prompt = o->initial_prompt;
+        out.quality = (o->quality >= 0 && o->quality <= 2) ? o->quality : 0;
     }
     return out;
 }
@@ -61,7 +62,7 @@ int kk_abi_version(void)
 
 const char* kk_version_string(void)
 {
-    return "2.3.1";
+    return "2.4.0";
 }
 
 int kk_gpu_enabled(void)

@@ -112,6 +112,7 @@ class Transcriber {
     String initialPrompt = '',
     int nThreads = 0,
     String? vadModelPath,
+    int quality = 0,
   }) {
     _send({
       'type': 'transcribePcm',
@@ -123,6 +124,7 @@ class Transcriber {
       'initialPrompt': initialPrompt,
       'nThreads': nThreads,
       'vadModelPath': vadModelPath,
+      'quality': quality,
     });
   }
 
@@ -287,6 +289,7 @@ void _workerMain(SendPort readyPort) {
         options.ref.language = language;
         options.ref.translate = (msg['translate'] as bool) ? 1 : 0;
         options.ref.initialPrompt = promptPtr;
+        options.ref.quality = msg['quality'] as int? ?? 0;
 
         final rc = lib.transcribePcm(
           engine,

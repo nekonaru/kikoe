@@ -78,6 +78,7 @@ void print_usage(const char* argv0)
         "  --gpu              Use GPU through a whisper.cpp GPU backend\n"
         "                     (build with -DKIKOE_USE_GPU=ON; CPU otherwise)\n"
         "  --vad              Filter silence with Silero VAD (auto-downloads vad-silero)\n"
+        "  --quality MODE     fast (greedy), balanced (default) or accurate (beam-5)\n"
         "  --translate        Translate speech to English instead of transcribing\n"
         "  --prompt TEXT      Initial prompt / custom vocabulary hint\n"
         "  --format FMTS      Comma separated output formats: txt, srt, vtt, json, md, csv\n"
@@ -86,7 +87,7 @@ void print_usage(const char* argv0)
         "  --outdir DIR       Write <name>.<fmt> files into DIR\n"
         "  -h, --help         Show this help\n\n"
         "Model cache: %s\n",
-        "2.3.1", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
+        "2.4.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
 }
 
 void print_error(kikoe::ErrorCode code)
@@ -106,6 +107,7 @@ struct Cli {
     bool translate = false;
     bool gpu = false;
     bool vad = false;
+    int quality = 0; // 0 balanced, 1 fast, 2 accurate
     bool list_models = false;
     bool show_version = false;
     std::string download_model;
@@ -196,6 +198,17 @@ bool parse_cli(int argc, char** argv, Cli& cli)
         else if (arg == "--translate") cli.translate = true;
         else if (arg == "--gpu") cli.gpu = true;
         else if (arg == "--vad") cli.vad = true;
+        else if (arg == "--quality") {
+            const char* v = next(); if (!v) return false;
+            const std::string q(v);
+            if (q == "fast") cli.quality = 1;
+            else if (q == "balanced") cli.quality = 0;
+            else if (q == "accurate") cli.quality = 2;
+            else {
+                std::fprintf(stderr, "kikoe: unknown --quality value (expected fast, balanced or accurate)\n");
+                return false;
+            }
+        }
         else if (!arg.empty() && arg[0] == '-') {
             std::fprintf(stderr, "kikoe: unknown option: %s\n", arg.c_str());
             return false;
@@ -256,7 +269,7 @@ int main(int argc, char** argv)
     }
 
     if (cli.show_version) {
-        std::fprintf(stdout, "kikoe %s\n", "2.3.1");
+        std::fprintf(stdout, "kikoe %s\n", "2.4.0");
         return 0;
     }
 
@@ -358,6 +371,7 @@ int main(int argc, char** argv)
     topts.language = cli.lang;
     topts.translate = cli.translate;
     topts.initial_prompt = cli.prompt;
+    topts.quality = cli.quality;
     topts.vad = !vad_model_path.empty();
     topts.vad_model_path = vad_model_path;
 

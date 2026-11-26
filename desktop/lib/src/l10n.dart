@@ -91,6 +91,12 @@ class L10n extends ChangeNotifier {
 }
 
 const Map<String, String> faqId = {
+    'A preset sets the model and VAD. Pick any model below to override.': 'Preset menentukan model dan VAD. Pilih model di bawah untuk menimpa.',
+    'Accurate': 'Akurat',
+    'Balanced': 'Seimbang',
+    'Estimated finish': 'Perkiraan selesai',
+    'Fast': 'Cepat',
+    'Speed and quality': 'Kecepatan dan kualitas',
     'Apply': 'Terapkan',
     'Case sensitive': 'Bedakan huruf besar/kecil',
     'Editing replaces the saved text; timestamps change only when shifted.': 'Pengubahan mengganti teks tersimpan; timestamp hanya berubah saat digeser.',

@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'src/l10n.dart';
 import 'src/about_screen.dart';
 import 'src/app_state.dart';
+import 'src/eta.dart';
 import 'src/faq_screen.dart';
 import 'src/history_screen.dart';
 import 'src/kikoe_theme.dart';
@@ -354,6 +355,24 @@ class _ControlPanel extends StatelessWidget {
             ],
           ),
           SizedBox(height: 18),
+          _SectionLabel(tr('Speed and quality')),
+          DropdownButton<String>(
+            value: s.speedMode,
+            isExpanded: true,
+            dropdownColor: kSurface,
+            underline: const SizedBox.shrink(),
+            items: [
+              DropdownMenuItem(value: 'fast', child: Text(tr('Fast'))),
+              DropdownMenuItem(value: 'balanced', child: Text(tr('Balanced'))),
+              DropdownMenuItem(value: 'accurate', child: Text(tr('Accurate'))),
+            ],
+            onChanged: (v) {
+              if (v != null) s.setSpeedMode(v);
+            },
+          ),
+          Text(tr('A preset sets the model and VAD. Pick any model below to override.'),
+              style: const TextStyle(fontSize: 10, color: kDim)),
+          SizedBox(height: 18),
           _SectionLabel(tr('Threads')),
           DropdownButton<int>(
             value: s.nThreads,
@@ -663,7 +682,10 @@ class _ItemTile extends StatelessWidget {
       case QueueStatus.pending:
         return 'pending';
       case QueueStatus.transcribing:
-        return 'transcribing… ${item.progress}%';
+        final eta = state.etaMs != null
+            ? ' · ${tr('Estimated finish')} ${formatEtaLabel(state.etaMs!)}'
+            : '';
+        return 'transcribing… ${item.progress}%$eta';
       case QueueStatus.done:
         return item.outputPath != null ? 'saved to ${item.outputPath}' : 'done';
       case QueueStatus.failed:

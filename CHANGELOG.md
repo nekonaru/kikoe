@@ -5,6 +5,23 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v2.4.0
+
+A speed and accuracy release. Transcription can now be tuned from the UI, and live progress includes a measured finish estimate.
+
+### New features
+
+- **Speed and quality presets.** Both apps offer Fast, Balanced and Accurate. A preset sets a starting model, VAD and decoding strategy. Every existing model, including `medium-q5_0` and `large-v3-turbo-q5_0`, stays in the picker and can override the preset at any time.
+- **Live finish estimate.** The progress bar now shows an estimated finish time beside the percentage. It is derived from observed progress, smoothed so it does not jump, and hidden until enough data exists. The decoding stage stays indeterminate because the decoder reports no percentage.
+- **Accurate mode uses beam search.** `kk_options.quality` selects greedy or beam-5 decoding. CLI gains `--quality fast|balanced|accurate`; C ABI minor version is 4.
+
+### Improvements
+
+- **Flash attention is enabled** in the whisper context, lowering peak memory on long audio.
+- **Custom vocabulary carries through every decode window** via `carry_initial_prompt`, so names and jargon stay correct deep into a long recording.
+- **Benchmark script** (`scripts/benchmark_transcribe.sh`) records wall time for model and quality combinations. Local measurements on the 11 second JFK sample: tiny 0.81s, small-q5_1 6.52s, small-q5_1 with VAD 6.23s, small-q5_1 with VAD and beam-5 6.95s.
+- **ETA logic lives in a pure helper** with unit tests in both apps. Android suite is now 18 tests, desktop 11.
+
 ## v2.3.1
 
 A stability release from a runtime audit of the released Android build. Two real races could silently corrupt or skip a transcription; both are fixed and covered by tests.
