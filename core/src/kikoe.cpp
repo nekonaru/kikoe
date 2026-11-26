@@ -61,7 +61,7 @@ int kk_abi_version(void)
 
 const char* kk_version_string(void)
 {
-    return "2.2.0";
+    return "2.3.0";
 }
 
 int kk_gpu_enabled(void)

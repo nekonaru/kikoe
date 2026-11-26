@@ -91,6 +91,16 @@ class L10n extends ChangeNotifier {
 }
 
 const Map<String, String> faqId = {
+    'Apply': 'Terapkan',
+    'Case sensitive': 'Bedakan huruf besar/kecil',
+    'Editing replaces the saved text; timestamps change only when shifted.': 'Pengubahan mengganti teks tersimpan; timestamp hanya berubah saat digeser.',
+    'Find': 'Cari',
+    'Find and replace': 'Cari dan ganti',
+    'Replace all': 'Ganti semua',
+    'Replace with': 'Ganti dengan',
+    'Shift timing (ms)': 'Geser timing (ms)',
+    'Shifted by': 'Digeser sejauh',
+    'segments changed': 'segmen diubah',
     'Delete imported model': 'Hapus model hasil impor',
     'Import a model…': 'Impor model…',
     'imported': 'diimpor',
