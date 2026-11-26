@@ -27,6 +27,8 @@ struct TranscribeOptions {
     bool vad = false;                // filter silence with whisper.cpp VAD
     std::string vad_model_path;      // required when vad is true
     int quality = 0;                 // 0 balanced, 1 fast, 2 accurate (beam search)
+    bool word_timestamps = false;    // collect per-word timing and confidence
+    bool diarize = false;            // tinydiarize speaker turns
 };
 
 using ProgressCallback = void (*)(int percent, void* user);

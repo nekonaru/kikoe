@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #define KK_ABI_VERSION_MAJOR 0
-#define KK_ABI_VERSION_MINOR 4
+#define KK_ABI_VERSION_MINOR 5
 
 typedef struct kk_engine kk_engine;
 
@@ -67,6 +67,8 @@ typedef struct {
     int         translate;      // 0 or 1
     const char* initial_prompt; // may be NULL
     int         quality;        // KK_QUALITY_* ; 0 = balanced
+    int         word_timestamps; // 0 or 1; collect per-word timing
+    int         diarize;        // 0 or 1; tinydiarize speaker turns
 } kk_options;
 
 typedef struct {
@@ -75,13 +77,19 @@ typedef struct {
     const char* text; // UTF-8, valid until the next kk_transcribe/kk_engine_free
 } kk_segment;
 
+typedef struct {
+    long long start_ms;
+    long long end_ms;
+    const char* text; // UTF-8, valid until the next kk_transcribe/kk_engine_free
+} kk_word;
+
 typedef void (*kk_progress_cb)(int percent, void* user);
 typedef void (*kk_segment_cb)(const kk_segment* seg, void* user);
 
 /* Returns KK_ABI_VERSION_MAJOR * 100 + KK_ABI_VERSION_MINOR. */
 KK_API int kk_abi_version(void);
 
-/* Static, never NULL. For example "2.5.0". */
+/* Static, never NULL. For example "3.0.0". */
 KK_API const char* kk_version_string(void);
 
 /* 1 when this library was built with a GPU backend, 0 for CPU-only builds.
@@ -146,6 +154,19 @@ KK_API int kk_last_segment_count(const kk_engine* engine);
 /* Copy segment `index` (0-based) into `*out_segment`. The text pointer is
  * borrowed (see header comment). Returns KK_OK or KK_ERR_INVALID_ARGUMENT. */
 KK_API int kk_last_segment_get(const kk_engine* engine, int index, kk_segment* out_segment);
+
+/* Average token probability for segment `index`, in permille (0..1000).
+ * Returns -1 for an invalid index or when confidence was not collected. */
+KK_API int kk_last_segment_confidence(const kk_engine* engine, int index);
+
+/* 0-based speaker index for segment `index`. Returns -1 for an invalid index. */
+KK_API int kk_last_segment_speaker(const kk_engine* engine, int index);
+
+/* Number of timed words in segment `index`. */
+KK_API int kk_last_word_count(const kk_engine* engine, int index);
+
+/* Copy word `word_index` of segment `index` into `*out_word`. */
+KK_API int kk_last_word_get(const kk_engine* engine, int index, int word_index, kk_word* out_word);
 
 /* Render the last transcription. `format` is "txt", "srt", "vtt" or "json".
  * When `out_buffer` is NULL or `buffer_size` == 0, only the required size is

@@ -26,6 +26,8 @@ class FakeTranscriber extends Transcriber {
     int nThreads = 0,
     String? vadModelPath,
     int quality = 0,
+    bool wordTimestamps = false,
+    bool diarize = false,
   }) {}
 
   @override

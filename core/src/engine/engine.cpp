@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace kikoe {
@@ -48,6 +49,41 @@ void on_new_segment(whisper_context* ctx, whisper_state* /*state*/, int n_new, v
     }
 }
 
+// Runs after whisper_full returns, when token level data is available.
+void enrich_segments(whisper_context* ctx, SegmentList& segments,
+                     bool word_timestamps, bool diarize)
+{
+    int speaker = 0;
+    for (size_t i = 0; i < segments.size(); ++i) {
+        const int index = static_cast<int>(i);
+        if (diarize && i > 0 &&
+            whisper_full_get_segment_speaker_turn_next(ctx, index - 1)) {
+            ++speaker;
+        }
+        segments[i].speaker = speaker;
+        if (!word_timestamps) continue;
+
+        double sum = 0.0;
+        int count = 0;
+        const int tokens = whisper_full_n_tokens(ctx, index);
+        for (int t = 0; t < tokens; ++t) {
+            const char* text = whisper_full_get_token_text(ctx, index, t);
+            if (text == nullptr || text[0] == '\0' || text[0] == '<') continue;
+            const int64_t t0 = whisper_full_get_token_t0(ctx, index, t);
+            const int64_t t1 = whisper_full_get_token_t1(ctx, index, t);
+            if (t1 <= t0) continue;
+            Word word;
+            word.start_ms = t0 * 10;
+            word.end_ms = t1 * 10;
+            word.text = text;
+            segments[i].words.push_back(std::move(word));
+            sum += whisper_full_get_token_p(ctx, index, t);
+            ++count;
+        }
+        segments[i].confidence = count > 0 ? static_cast<float>(sum / count) : 0.0f;
+    }
+}
+
 } // namespace
 
 std::unique_ptr<Engine> Engine::create(const EngineOptions& options, ErrorCode& err)
@@ -64,6 +100,9 @@ std::unique_ptr<Engine> Engine::create(const EngineOptions& options, ErrorCode& 
         // Flash attention lowers peak memory and is faster for long audio on
         // both CPU and GPU backends. whisper.cpp ignores it when unsupported.
         cparams.flash_attn = true;
+        // Required for token level alignment. It only costs time when token
+        // timestamps are actually requested in a decode call.
+        cparams.dtw_token_timestamps = true;
 
         whisper_context* ctx = whisper_init_from_file_with_params(options.model_path.c_str(), cparams);
         if (ctx == nullptr) {
@@ -148,6 +187,8 @@ ErrorCode Engine::transcribe_impl(const float* samples,
     if (accurate) wparams.beam_search.beam_size = 5;
     // Carry custom vocabulary into every decode window, not just the first.
     wparams.carry_initial_prompt = true;
+    wparams.token_timestamps = options.word_timestamps;
+    wparams.tdrz_enable = options.diarize;
     wparams.n_threads = n_threads_;
     wparams.translate = options.translate;
     wparams.language = options.language.empty() ? "auto" : options.language.c_str();
@@ -189,7 +230,10 @@ ErrorCode Engine::transcribe_impl(const float* samples,
         return cancel_.load(std::memory_order_relaxed) ? ErrorCode::Cancelled : ErrorCode::EngineFailed;
     }
 
-    if (segments) *segments = std::move(collected);
+    if (segments) {
+        enrich_segments(ctx_, collected, options.word_timestamps, options.diarize);
+        *segments = std::move(collected);
+    }
     return ErrorCode::Ok;
 }
 

@@ -79,6 +79,10 @@ void print_usage(const char* argv0)
         "                     (build with -DKIKOE_USE_GPU=ON; CPU otherwise)\n"
         "  --vad              Filter silence with Silero VAD (auto-downloads vad-silero)\n"
         "  --quality MODE     fast (greedy), balanced (default) or accurate (beam-5)\n"
+        "  --word-timestamps  Emit per-word timing in SRT and VTT\n"
+        "  --diarize          Label speaker turns with tinydiarize\n"
+        "  --prompt-file FILE Read the initial prompt from a text file\n"
+        "  --config FILE      Load defaults from a TOML-style file (default: kikoe.toml)\n"
         "  --translate        Translate speech to English instead of transcribing\n"
         "  --prompt TEXT      Initial prompt / custom vocabulary hint\n"
         "  --format FMTS      Comma separated output formats: txt, srt, vtt, json, md, csv\n"
@@ -87,7 +91,7 @@ void print_usage(const char* argv0)
         "  --outdir DIR       Write <name>.<fmt> files into DIR\n"
         "  -h, --help         Show this help\n\n"
         "Model cache: %s\n",
-        "2.5.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
+        "3.0.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
 }
 
 void print_error(kikoe::ErrorCode code)
@@ -108,10 +112,70 @@ struct Cli {
     bool gpu = false;
     bool vad = false;
     int quality = 0; // 0 balanced, 1 fast, 2 accurate
+    bool word_timestamps = false;
+    bool diarize = false;
+    std::string prompt_file;
+    std::string config_file;
     bool list_models = false;
     bool show_version = false;
     std::string download_model;
 };
+
+std::string trim_copy(const std::string& s)
+{
+    size_t b = 0, e = s.size();
+    while (b < e && std::isspace(static_cast<unsigned char>(s[b]))) ++b;
+    while (e > b && std::isspace(static_cast<unsigned char>(s[e - 1]))) --e;
+    return s.substr(b, e - b);
+}
+
+bool apply_config_value(Cli& cli, std::string& formats_csv,
+                        const std::string& key, const std::string& value)
+{
+    if (key == "model") cli.model = value;
+    else if (key == "lang" || key == "language") cli.lang = value;
+    else if (key == "prompt") cli.prompt = value;
+    else if (key == "prompt_file") cli.prompt_file = value;
+    else if (key == "format" || key == "formats") formats_csv = value;
+    else if (key == "threads") cli.threads = std::stoi(value);
+    else if (key == "vad") cli.vad = value == "1" || value == "true";
+    else if (key == "word_timestamps") cli.word_timestamps = value == "1" || value == "true";
+    else if (key == "diarize") cli.diarize = value == "1" || value == "true";
+    else if (key == "translate") cli.translate = value == "1" || value == "true";
+    else if (key == "quality") {
+        if (value == "fast") cli.quality = 1;
+        else if (value == "accurate") cli.quality = 2;
+        else if (value == "balanced") cli.quality = 0;
+        else return false;
+    } else return false;
+    return true;
+}
+
+bool load_config(const std::string& path, Cli& cli, std::string& formats_csv)
+{
+    std::ifstream in(path);
+    if (!in) return false;
+    std::string line;
+    while (std::getline(in, line)) {
+        const size_t hash = line.find('#');
+        if (hash != std::string::npos) line = line.substr(0, hash);
+        const size_t eq = line.find('=');
+        if (eq == std::string::npos) continue;
+        std::string key = trim_copy(line.substr(0, eq));
+        std::string value = trim_copy(line.substr(eq + 1));
+        if (key.empty()) continue;
+        if (value.size() >= 2 &&
+            ((value.front() == '"' && value.back() == '"') ||
+             (value.front() == '\'' && value.back() == '\''))) {
+            value = value.substr(1, value.size() - 2);
+        }
+        if (!apply_config_value(cli, formats_csv, key, value)) {
+            std::fprintf(stderr, "kikoe: unknown config key: %s\n", key.c_str());
+            return false;
+        }
+    }
+    return true;
+}
 
 bool ends_with_ci(const std::string& s, const std::string& suffix)
 {
@@ -174,6 +238,20 @@ bool parse_cli(int argc, char** argv, Cli& cli)
 {
     if (argc < 2) return false;
     std::string formats_csv;
+
+    // Config is applied first so explicit CLI flags can override it.
+    std::string config_path;
+    for (int i = 1; i + 1 < argc; ++i) {
+        if (std::string(argv[i]) == "--config") config_path = argv[i + 1];
+    }
+    if (config_path.empty()) {
+        std::ifstream probe("kikoe.toml");
+        if (probe.good()) config_path = "kikoe.toml";
+    }
+    if (!config_path.empty() && !load_config(config_path, cli, formats_csv)) {
+        return false;
+    }
+
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
         auto next = [&]() -> const char* {
@@ -187,6 +265,10 @@ bool parse_cli(int argc, char** argv, Cli& cli)
         else if (arg == "--model")  { const char* v = next(); if (!v) return false; cli.model = v; }
         else if (arg == "--lang")   { const char* v = next(); if (!v) return false; cli.lang = v; }
         else if (arg == "--prompt") { const char* v = next(); if (!v) return false; cli.prompt = v; }
+        else if (arg == "--prompt-file") { const char* v = next(); if (!v) return false; cli.prompt_file = v; }
+        else if (arg == "--config") { next(); }
+        else if (arg == "--word-timestamps") cli.word_timestamps = true;
+        else if (arg == "--diarize") cli.diarize = true;
         else if (arg == "-o" || arg == "--output") { const char* v = next(); if (!v) return false; cli.output = v; }
         else if (arg == "--outdir") { const char* v = next(); if (!v) return false; cli.outdir = v; }
         else if (arg == "--format") { const char* v = next(); if (!v) return false; formats_csv = v; }
@@ -214,6 +296,19 @@ bool parse_cli(int argc, char** argv, Cli& cli)
             return false;
         }
         else cli.inputs.push_back(arg);
+    }
+
+    if (!cli.prompt_file.empty()) {
+        std::ifstream in(cli.prompt_file);
+        if (!in) {
+            std::fprintf(stderr, "kikoe: cannot read prompt file: %s\n", cli.prompt_file.c_str());
+            return false;
+        }
+        std::string line;
+        while (std::getline(in, line)) {
+            if (!cli.prompt.empty()) cli.prompt += ' ';
+            cli.prompt += trim_copy(line);
+        }
     }
 
     if (!formats_csv.empty() && !parse_formats(formats_csv, cli.formats)) {
@@ -269,7 +364,7 @@ int main(int argc, char** argv)
     }
 
     if (cli.show_version) {
-        std::fprintf(stdout, "kikoe %s\n", "2.5.0");
+        std::fprintf(stdout, "kikoe %s\n", "3.0.0");
         return 0;
     }
 
@@ -372,6 +467,8 @@ int main(int argc, char** argv)
     topts.translate = cli.translate;
     topts.initial_prompt = cli.prompt;
     topts.quality = cli.quality;
+    topts.word_timestamps = cli.word_timestamps;
+    topts.diarize = cli.diarize;
     topts.vad = !vad_model_path.empty();
     topts.vad_model_path = vad_model_path;
 

@@ -5,6 +5,26 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v3.0.0
+
+Rilis Kikoe terbesar sejauh ini. Timing per kata, deteksi pembicara, operasi editor, prompt tersimpan, dan konfigurasi CLI hadir bersamaan. Tidak ada model yang dihapus.
+
+### Fitur baru
+
+- **Timestamp per kata.** Kedua aplikasi dan CLI bisa mengumpulkan timing setiap kata. Ekspor SRT dan VTT memakai cue per kata saat fitur ini aktif. Flag CLI adalah `--word-timestamps`.
+- **Deteksi pembicara.** Tinydiarize memberi label giliran bicara sebagai `SPEAKER_00`, `SPEAKER_01`, dan seterusnya. Kedua aplikasi punya toggle; CLI memakai `--diarize`.
+- **Operasi editor.** Pisahkan segmen di tengah, gabungkan dengan segmen berikutnya, hapus segmen, dan bersihkan kata berulang yang kadang dihasilkan Whisper. Semua operasi berupa helper murni dengan tes unit.
+- **Pustaka prompt.** Simpan kosakata khusus dengan nama, berpindah antarpreset, dan hapus preset. Prompt tersimpan secara lokal.
+- **File konfigurasi CLI.** `kikoe.toml` menyediakan nilai awal untuk model, bahasa, kualitas, VAD, prompt, format, dan thread. Flag eksplisit tetap menimpa. Gunakan `--config FILE` untuk path lain.
+- **File prompt CLI.** `--prompt-file FILE` membaca prompt awal multi-baris dari disk.
+- **Aksesor C API.** `kk_last_segment_confidence`, `kk_last_segment_speaker`, `kk_last_word_count`, dan `kk_last_word_get` membuka data baru. Versi minor ABI menjadi 5.
+
+### Peningkatan
+
+- **Flash attention dan prompt terbawa** dari v2.4.0 tetap aktif.
+- **Confidence diukur**, bukan ditebak: nilainya adalah rata-rata probabilitas token dari whisper.cpp.
+- **Rangkaian Android kini 29 tes, desktop 21**, termasuk cakupan baru untuk split, merge, pembersihan, dan penghapusan kata berulang.
+
 ## v2.5.0
 
 Rilis hasil audit runtime. Dua anomali progres diperbaiki dan riwayat kini bisa dicari.
