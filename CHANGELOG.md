@@ -5,6 +5,20 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v2.3.0
+
+A real post-transcription workflow release: fix repeated words and subtitle drift without leaving the editor.
+
+### New features
+
+- **Find & replace across all segments.** The transcript editor now has a find/replace panel with an optional case-sensitive mode. One action updates every matching segment, so a model that consistently mishears a name can be corrected in seconds.
+- **Timing shift.** A millisecond offset moves every segment start/end together, clamped at zero, so subtitles that lead or lag the audio can be aligned from the editor. All exports use the edited text and shifted timestamps.
+
+### Improvements
+
+- **Pure logic helpers** (`transcript_editor_logic.dart`) keep find/replace and timing shifts unit tested, independent of Flutter widgets.
+- **Fully localized** in English and Indonesian.
+
 ## v2.2.0
 
 A big feature release: the apps are no longer limited to the built-in model registry.

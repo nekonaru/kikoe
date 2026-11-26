@@ -5,6 +5,20 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v2.3.0
+
+Rilis alur kerja pasca-transkripsi yang nyata: perbaiki kata yang berulang dan pergeseran subtitle tanpa meninggalkan editor.
+
+### Fitur baru
+
+- **Cari dan ganti di semua segmen.** Editor transkrip kini punya panel cari/ganti dengan opsi bedakan huruf besar/kecil. Satu tindakan memperbarui semua segmen yang cocok, sehingga kesalahan nama yang konsisten bisa diperbaiki dalam hitungan detik.
+- **Geser timing.** Offset dalam milidetik menggeser awal/akhir semua segmen bersamaan, dibatasi di nol, sehingga subtitle yang mendahului atau terlambat bisa disejajarkan dari editor. Semua ekspor memakai teks hasil edit dan timestamp yang digeser.
+
+### Peningkatan
+
+- **Helper logika murni** (`transcript_editor_logic.dart`) menjaga cari/ganti dan pergeseran timing tetap diuji secara unit, lepas dari widget Flutter.
+- **Sepenuhnya terlokalisasi** dalam Inggris dan Indonesia.
+
 ## v2.2.0
 
 Rilis fitur besar: aplikasi tidak lagi terbatas pada registry model bawaan.
