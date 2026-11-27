@@ -1,7 +1,7 @@
 name: kikoe_mobile
 description: "Kikoe mobile app: free, unlimited, offline audio/video transcription for Android."
 publish_to: 'none'
-version: 3.1.0+20
+version: 4.0.0+21
 
 environment:
   sdk: ^3.13.0

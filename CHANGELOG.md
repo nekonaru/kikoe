@@ -5,6 +5,25 @@ All notable changes to Kikoe are documented here. The format follows
 
 ## Unreleased
 
+## v4.0.0
+
+A full visual and interaction redesign. This is the final design program from the v3 plan, delivered as one release.
+
+### New features
+
+- **Review screen.** Plain, Segments and Words tabs for every finished transcript. Segments show confidence bands and speaker chips; filters cover text search, low-confidence only and speaker. The word view uses the word timing already collected by the engine.
+- **Three-step flow.** Both apps show `Choose file`, `Settings` and `Result` so the current stage is explicit.
+- **Mobile bottom navigation.** Transcribe, History and More. More collects FAQ, About, Sponsor, Privacy and Licenses in one consistent list.
+- **Desktop command palette.** Ctrl+K or Cmd+K opens pick files, start, cancel and history.
+- **Motion system.** Meaningful fade and scale transitions with separate enter and exit durations, plus a reduced-motion path that skips animation entirely.
+
+### Improvements
+
+- **Three-layer design tokens.** Primitive colors, spacing, radius and motion feed semantic roles and component constants. Mobile and desktop share one definition.
+- **Contrast and typography.** Button fill and accent colors are separated so white text on a button reaches 4,5:1. Caption text moved from 10,5 to 12 px.
+- **Accessibility.** Icon-only buttons carry semantics labels, step changes are announced to screen readers, and `LinkTile` exposes a button label.
+- **Review logic is a pure helper** with unit tests in both apps. Android suite is now 32 tests, desktop 24.
+
 ## v3.1.0
 
 The final wave of the v3 program, focused on CLI workflow.
