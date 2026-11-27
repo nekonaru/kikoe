@@ -16,14 +16,14 @@ dependencies:
   path: ^1.9.1                   # BSD-3
   path_provider: ^2.1.5          # BSD-3
   shared_preferences: ^2.3.4 # BSD-3
-  file_picker: ^10.2.0           # MIT
+  file_picker: ^13.4.1           # MIT
   receive_sharing_intent: ^1.8.1 # MIT
   flutter_local_notifications: ^19.4.0 # MIT
-  share_plus: ^12.0.1            # MIT
+  share_plus: ^13.3.1            # MIT
   http: ^1.4.0                   # BSD-3
   crypto: ^3.0.6                 # BSD-3
   url_launcher: ^6.3.3           # BSD-3, opens external links (GitHub, sponsors)
-  package_info_plus: ^9.0.1      # BSD-3, version display and update check (share_plus needs win32 ^5)
+  package_info_plus: ^10.2.2      # BSD-3, version display and update check (share_plus needs win32 ^5)
 
 dev_dependencies:
   flutter_test:
