@@ -5,6 +5,25 @@ Semua perubahan penting Kikoe didokumentasikan di sini. Formatnya mengikuti
 
 ## Belum dirilis
 
+## v4.0.0
+
+Desain dan interaksi menyeluruh. Ini gelombang terakhir dari program desain v3 yang dikirim dalam satu rilis.
+
+### Fitur baru
+
+- **Layar tinjau.** Tab Plain, Segmen, dan Kata untuk setiap transkrip selesai. Segmen menampilkan kategori keyakinan dan chip pembicara; filter mencakup pencarian teks, hanya keyakinan rendah, dan pembicara. Tampilan Kata memakai timing kata yang sudah dikumpulkan engine.
+- **Alur tiga langkah.** Kedua aplikasi menampilkan `Pilih file`, `Setelan`, dan `Hasil` agar tahap saat ini jelas.
+- **Navigasi bawah mobile.** Transcribe, History, dan More. More mengumpulkan FAQ, Tentang, Sponsor, Privasi, dan Lisensi dalam satu daftar yang konsisten.
+- **Palet perintah desktop.** Ctrl+K atau Cmd+K membuka pilih file, mulai, batal, dan riwayat.
+- **Sistem gerak.** Transisi fade dan scale yang bermakna dengan durasi masuk dan keluar terpisah, plus jalur reduced motion yang melewati animasi sama sekali.
+
+### Peningkatan
+
+- **Token desain tiga lapis.** Warna primitive, spacing, radius, dan gerak memberi peran semantik dan konstanta komponen. Mobile dan desktop memakai satu definisi.
+- **Kontras dan tipografi.** Warna isi tombol dan akses dipisahkan sehingga teks putih di tombol mencapai 4,5:1. Teks caption naik dari 10,5 menjadi 12 px.
+- **Aksesibilitas.** Tombol ikon punya label semantik, perubahan tahap diumumkan ke pembaca layar, dan `LinkTile` membuka label tombol.
+- **Logika tinjau adalah helper murni** dengan tes unit di kedua aplikasi. Rangkaian Android kini 32 tes, desktop 24.
+
 ## v3.1.0
 
 Gelombang terakhir program v3, berfokus pada alur kerja CLI.

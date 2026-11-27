@@ -100,7 +100,7 @@ void print_usage(const char* argv0)
         "  --outdir DIR       Write <name>.<fmt> files into DIR\n"
         "  -h, --help         Show this help\n\n"
         "Model cache: %s\n",
-        "3.1.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
+        "4.0.0", argv0, argv0, argv0, kikoe::model_cache_dir().c_str());
 }
 
 void print_error(kikoe::ErrorCode code)
@@ -500,7 +500,7 @@ int main(int argc, char** argv)
     }
 
     if (cli.show_version) {
-        std::fprintf(stdout, "kikoe %s\n", "3.1.0");
+        std::fprintf(stdout, "kikoe %s\n", "4.0.0");
         return 0;
     }
 

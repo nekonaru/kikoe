@@ -13,7 +13,9 @@ import 'src/faq_screen.dart';
 import 'src/history_screen.dart';
 import 'src/kikoe_theme.dart';
 import 'src/model_menu.dart';
+import 'src/review_filter.dart';
 import 'src/queue_item.dart';
+import 'src/review_screen.dart';
 import 'src/transcript_editor_screen.dart';
 
 Future<void> main() async {
@@ -91,6 +93,46 @@ class _KikoeHomeState extends State<KikoeHome> {
     s.addFiles(result.paths.whereType<String>());
   }
 
+  Future<void> _showCommands() async {
+    final action = await showDialog<String>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text(tr('Command palette')),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(context).pop('pick'),
+            child: Text(tr('Pick files')),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(context).pop('start'),
+            child: Text(tr('Start transcription')),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(context).pop('cancel'),
+            child: Text(tr('Cancel')),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(context).pop('history'),
+            child: Text(tr('History')),
+          ),
+        ],
+      ),
+    );
+    switch (action) {
+      case 'pick':
+        await _pickFiles();
+      case 'start':
+        if (s.items.any((i) => i.status == QueueStatus.pending)) s.start();
+      case 'cancel':
+        s.cancelCurrent();
+      case 'history':
+        if (!mounted) return;
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const HistoryScreen()),
+        );
+    }
+  }
+
   Future<void> _pickOutDir() async {
     final dir = await FilePicker.platform.getDirectoryPath(
       dialogTitle: 'Choose output folder',
@@ -104,6 +146,8 @@ class _KikoeHomeState extends State<KikoeHome> {
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.keyO, control: true): _pickFiles,
         const SingleActivator(LogicalKeyboardKey.keyO, meta: true): _pickFiles,
+        const SingleActivator(LogicalKeyboardKey.keyK, control: true): _showCommands,
+        const SingleActivator(LogicalKeyboardKey.keyK, meta: true): _showCommands,
         const SingleActivator(LogicalKeyboardKey.enter, control: true): () {
           if (s.items.any((i) => i.status == QueueStatus.pending)) s.start();
         },
@@ -218,6 +262,58 @@ class _Header extends StatelessWidget {
   }
 }
 
+class _StepStrip extends StatelessWidget {
+  const _StepStrip({required this.state});
+
+  final AppState state;
+
+  int get _current {
+    if (state.items.isEmpty) return 0;
+    if (state.items.every((i) => i.status == QueueStatus.done)) return 2;
+    return 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = [tr('Choose file'), tr('Settings'), tr('Result')];
+    return Semantics(
+      label: '${tr('Step')} ${_current + 1} ${tr('of')} 3: ${labels[_current]}',
+      child: Row(
+        children: [
+          for (var i = 0; i < 3; i++) ...[
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: i <= _current ? kBrandFill : kSurface2,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text('${i + 1}',
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w800, color: kText)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(labels[i],
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: i == _current ? kText : kDim,
+                          fontWeight:
+                              i == _current ? FontWeight.w700 : FontWeight.w400)),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _ControlPanel extends StatelessWidget {
   const _ControlPanel({
     required this.state,
@@ -243,6 +339,8 @@ class _ControlPanel extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _StepStrip(state: s),
+          const SizedBox(height: kSpaceLg),
           _SectionLabel(tr('Model')),
           DropdownButton<String>(
             value: s.modelName,
@@ -304,7 +402,7 @@ class _ControlPanel extends StatelessWidget {
           else
             Text(
               model.note,
-              style: const TextStyle(fontSize: 11, color: kDim),
+              style: const TextStyle(fontSize: 12, color: kDim),
             ),
           SizedBox(height: 18),
           _SectionLabel(tr('Language')),
@@ -339,7 +437,7 @@ class _ControlPanel extends StatelessWidget {
                 child: Text(
                   s.customOutDir ?? '${s.defaultOutDir} (default)',
                   maxLines: 2,
-                  style: const TextStyle(fontSize: 11, color: kDim),
+                  style: const TextStyle(fontSize: 12, color: kDim),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -393,7 +491,7 @@ class _ControlPanel extends StatelessWidget {
             onChanged: s.setWordTimestamps,
             title: Text(tr('Word timestamps')),
             subtitle: Text(tr('Precise timing for every word (slower)'),
-                style: const TextStyle(fontSize: 11)),
+                style: const TextStyle(fontSize: 12)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -402,7 +500,7 @@ class _ControlPanel extends StatelessWidget {
             onChanged: s.setDiarize,
             title: Text(tr('Detect speakers')),
             subtitle: Text(tr('Label speaker changes (experimental)'),
-                style: const TextStyle(fontSize: 11)),
+                style: const TextStyle(fontSize: 12)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -425,8 +523,8 @@ class _ControlPanel extends StatelessWidget {
             onChanged: s.setUseVad,
             title: Text(tr('Filter silence (VAD)')),
             subtitle: s.useVad && !s.vadReady
-                ? Text(tr('Silero model (0.9 MB) downloads once'), style: TextStyle(fontSize: 11))
-                : Text(tr('Skip silent regions with Silero VAD'), style: TextStyle(fontSize: 11)),
+                ? Text(tr('Silero model (0.9 MB) downloads once'), style: TextStyle(fontSize: 12))
+                : Text(tr('Skip silent regions with Silero VAD'), style: TextStyle(fontSize: 12)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -504,7 +602,7 @@ class _ControlPanel extends StatelessWidget {
                 Expanded(
                   child: Text(
                     s.downloadError!,
-                    style: const TextStyle(fontSize: 11, color: kBrand),
+                    style: const TextStyle(fontSize: 12, color: kBrand),
                   ),
                 ),
               ],
@@ -515,7 +613,7 @@ class _ControlPanel extends StatelessWidget {
             onChanged: s.setAutoSave,
             title: Text(tr('Save automatically')),
             subtitle: Text(tr('Write transcripts to the output folder when done'),
-                style: TextStyle(fontSize: 11)),
+                style: TextStyle(fontSize: 12)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -567,7 +665,7 @@ class _PromptFieldState extends State<_PromptField> {
       style: const TextStyle(fontSize: 12, color: kText),
       decoration: InputDecoration(
         hintText: 'Names, jargon, e.g. Kikoe, Prasetyo…',
-        hintStyle: const TextStyle(fontSize: 11, color: kDim),
+        hintStyle: const TextStyle(fontSize: 12, color: kDim),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: kSurface2),
@@ -625,7 +723,7 @@ class _DownloadBlock extends StatelessWidget {
       children: [
         Text(
           tr('Not downloaded yet. Kikoe needs the model file on this device once; after that, everything runs offline.'),
-          style: const TextStyle(fontSize: 11, color: kDim),
+          style: const TextStyle(fontSize: 12, color: kDim),
         ),
         SizedBox(height: 6),
         FilledButton.tonalIcon(
@@ -663,7 +761,7 @@ class _StartButton extends StatelessWidget {
       height: 46,
       child: FilledButton.icon(
         onPressed: canStart ? state.start : null,
-        style: FilledButton.styleFrom(backgroundColor: kBrand),
+        style: FilledButton.styleFrom(backgroundColor: kBrandFill),
         icon: const Icon(Icons.play_arrow),
         label: Text(state.selectedModelCached ? 'Transcribe' : 'Download the model first'),
       ),
@@ -733,7 +831,7 @@ class _DropHint extends StatelessWidget {
               Text(
                 'Supports ${_QueuePanel._supported}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 11, color: kDim),
+                style: const TextStyle(fontSize: 12, color: kDim),
               ),
             ],
           ),
@@ -806,6 +904,32 @@ class _ItemTile extends StatelessWidget {
                   const Icon(Icons.check_circle, color: Color(0xFF6FCF97), size: 18)
                 else if (item.status == QueueStatus.failed)
                   const Icon(Icons.error_outline, color: kBrand, size: 18),
+                if (item.segments.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.fact_check_outlined, size: 18),
+                    tooltip: 'Review transcript',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ReviewScreen(
+                            title: item.name,
+                            segments: item.segments
+                                .map((s) => ReviewSegment(
+                                      s.startMs,
+                                      s.endMs,
+                                      s.text,
+                                      confidence: s.confidence,
+                                      speaker: s.speaker,
+                                      words: s.words
+                                          .map((w) => ReviewWord(w.startMs, w.endMs, w.text))
+                                          .toList(),
+                                    ))
+                                .toList(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 IconButton(
                   icon: Icon(running ? Icons.stop_circle_outlined : Icons.close),
                   onPressed: () => state.removeItem(item),
@@ -814,14 +938,16 @@ class _ItemTile extends StatelessWidget {
               ],
             ),
             SizedBox(height: 4),
-            Text(_status, style: const TextStyle(fontSize: 11, color: kDim)),
+            Text(_status, style: const TextStyle(fontSize: 12, color: kDim)),
             if (running) ...[
               SizedBox(height: 8),
               LinearProgressIndicator(value: item.progress > 0 ? item.progress / 100 : null, color: kBrand),
             ],
             if (item.segments.isNotEmpty) ...[
               SizedBox(height: 8),
-              ExpansionTile(
+              MotionBox(
+                id: item.segments.length,
+                child: ExpansionTile(
                 title: Text(tr('Preview'), style: TextStyle(fontSize: 12, color: kDim)),
                 tilePadding: EdgeInsets.zero,
                 dense: true,
@@ -839,8 +965,9 @@ class _ItemTile extends StatelessWidget {
                     ),
                   if (item.segments.length > 50)
                     Text(tr('… ${item.segments.length - 50} more lines'),
-                        style: const TextStyle(fontSize: 11, color: kDim)),
+                        style: const TextStyle(fontSize: 12, color: kDim)),
                 ],
+              ),
               ),
             ],
             if (item.status == QueueStatus.done)
@@ -926,12 +1053,12 @@ class _StatusBar extends StatelessWidget {
         children: [
           Text(
             total == 0 ? 'No files queued' : '$done/$total done',
-            style: const TextStyle(fontSize: 11, color: kDim),
+            style: const TextStyle(fontSize: 12, color: kDim),
           ),
           const Spacer(),
           Text(
             tr('100% offline · no telemetry'),
-            style: const TextStyle(fontSize: 11, color: kDim),
+            style: const TextStyle(fontSize: 12, color: kDim),
           ),
         ],
       ),

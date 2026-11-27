@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:path/path.dart' as p;
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:share_plus/share_plus.dart';
@@ -16,9 +17,14 @@ import 'src/app_state.dart';
 import 'src/faq_screen.dart';
 import 'src/eta.dart';
 import 'src/history_screen.dart';
+import 'src/sponsor_screen.dart';
+import 'src/privacy_screen.dart';
+import 'src/licenses_screen.dart';
 import 'src/kikoe_theme.dart';
 import 'src/model_menu.dart';
+import 'src/review_filter.dart';
 import 'src/share_handler.dart';
+import 'src/review_screen.dart';
 import 'src/transcript_editor_screen.dart';
 
 int _wordCount(List<dynamic> segments) {
@@ -131,6 +137,7 @@ class KikoeHome extends StatefulWidget {
 class _KikoeHomeState extends State<KikoeHome> {
   AppState get state => widget.state;
 
+
   @override
   void initState() {
     super.initState();
@@ -146,8 +153,15 @@ class _KikoeHomeState extends State<KikoeHome> {
 
   String? _notifiedLocation;
   String? _notifiedError;
+  JobStage? _lastStage;
 
   void _onStateChanged() {
+    final stage = state.stage;
+    if (stage == JobStage.done && _lastStage != stage) {
+      // ignore: deprecated_member_use
+      SemanticsService.announce(tr('Transcription finished'), TextDirection.ltr);
+    }
+    _lastStage = stage;
     final loc = state.savedLocation.isEmpty ? null : state.savedLocation;
     if (loc != null && loc != _notifiedLocation && mounted) {
       _notifiedLocation = loc;
@@ -281,6 +295,8 @@ class _KikoeHomeState extends State<KikoeHome> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               children: [
+                _StepStrip(state: state),
+                const SizedBox(height: kSpaceLg),
                 if (state.inputPath == null)
                   _PickCard(onTap: _pickFile)
                 else
@@ -343,6 +359,33 @@ class _KikoeHomeState extends State<KikoeHome> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
+                            tooltip: 'Review transcript',
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ReviewScreen(
+                                    title: p.basename(state.inputPath ?? 'file'),
+                                    segments: state.segments
+                                        .map((s) => ReviewSegment(
+                                              s.startMs,
+                                              s.endMs,
+                                              s.text,
+                                              confidence: s.confidence,
+                                              speaker: s.speaker,
+                                              words: s.words
+                                                  .map((w) => ReviewWord(
+                                                        w.startMs, w.endMs, w.text))
+                                                  .toList(),
+                                            ))
+                                        .toList(),
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.fact_check_outlined,
+                                color: kDim, size: 20),
+                          ),
+                          IconButton(
                             tooltip: 'Edit transcript',
                             onPressed: () {
                               Navigator.of(context).push(
@@ -386,16 +429,19 @@ class _KikoeHomeState extends State<KikoeHome> {
                       ),
                     ],
                   ),
-                  SectionCard(
-                    child: SelectableText(
-                      state.segments.map((s) => s.text).join(),
-                      style: const TextStyle(fontSize: 13.5, color: kText, height: 1.5),
+                  MotionBox(
+                    id: state.segments.length,
+                    child: SectionCard(
+                      child: SelectableText(
+                        state.segments.map((s) => s.text).join(),
+                        style: const TextStyle(fontSize: 14, color: kText, height: 1.5),
+                      ),
                     ),
                   ),
                   SizedBox(height: 6),
                   Text(
                     '${_wordCount(state.segments)} words · ${_durationLabel(state.segments)} · ${state.segments.length} segments',
-                    style: const TextStyle(fontSize: 11, color: kDim),
+                    style: const TextStyle(fontSize: 12, color: kDim),
                   ),
                   SizedBox(height: 12),
                   SectionLabel(tr('Save or share')),
@@ -422,13 +468,144 @@ class _KikoeHomeState extends State<KikoeHome> {
                   ),
                   SizedBox(height: 8),
                   Text(tr('Saves into Downloads/kikoe'),
-                      style: TextStyle(fontSize: 11, color: kDim)),
+                      style: TextStyle(fontSize: 12, color: kDim)),
                 ],
               ],
             ),
           ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: 0,
+            onDestinationSelected: (i) {
+              if (i == 1) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                );
+              } else if (i == 2) {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MoreScreen()),
+                );
+              }
+            },
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.mic_none),
+                selectedIcon: const Icon(Icons.mic),
+                label: tr('Transcribe'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.history_outlined),
+                label: tr('History'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.more_horiz),
+                label: tr('More'),
+              ),
+            ],
+          ),
         );
       },
+    );
+  }
+}
+
+class MoreScreen extends StatelessWidget {
+  const MoreScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(backgroundColor: kSurface, title: Text(tr('More'))),
+      body: ListView(
+        padding: const EdgeInsets.all(kSpaceLg),
+        children: [
+          LinkTile(
+            icon: Icons.help_outline,
+            title: tr('FAQ'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FaqScreen()),
+            ),
+          ),
+          LinkTile(
+            icon: Icons.info_outline,
+            title: tr('About'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AboutScreen()),
+            ),
+          ),
+          LinkTile(
+            icon: Icons.volunteer_activism,
+            title: tr('Sponsor'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SponsorScreen()),
+            ),
+          ),
+          LinkTile(
+            icon: Icons.privacy_tip_outlined,
+            title: tr('Privacy policy'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PrivacyScreen()),
+            ),
+          ),
+          LinkTile(
+            icon: Icons.gavel_outlined,
+            title: tr('Licenses'),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const LicensesScreen()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepStrip extends StatelessWidget {
+  const _StepStrip({required this.state});
+
+  final AppState state;
+
+  int get _current {
+    if (state.inputPath == null) return 0;
+    if (state.stage == JobStage.done) return 2;
+    return 1;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = [tr('Choose file'), tr('Settings'), tr('Result')];
+    return Semantics(
+      label: '${tr('Step')} ${_current + 1} ${tr('of')} 3: ${labels[_current]}',
+      child: Row(
+        children: [
+          for (var i = 0; i < 3; i++) ...[
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: i <= _current ? kBrandFill : kSurface2,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text('${i + 1}',
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w800, color: kText)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(labels[i],
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: i == _current ? kText : kDim,
+                          fontWeight:
+                              i == _current ? FontWeight.w700 : FontWeight.w400)),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -557,7 +734,7 @@ class _FileCard extends StatelessWidget {
                     (sizeKb / 1024) >= 1024
                         ? '${(sizeKb / 1024 / 1024).toStringAsFixed(2)} GB'
                         : '${(sizeKb / 1024).toStringAsFixed(1)} MB',
-                    style: const TextStyle(color: kDim, fontSize: 11),
+                    style: const TextStyle(color: kDim, fontSize: 12),
                   ),
               ],
             ),
@@ -644,7 +821,7 @@ class _ModelSection extends StatelessWidget {
           ] else if (!cached) ...[
             Text(
               'One-time download, then fully offline. ${model.sizeMb.toStringAsFixed(0)} MB.',
-              style: const TextStyle(fontSize: 11, color: kDim),
+              style: const TextStyle(fontSize: 12, color: kDim),
             ),
             SizedBox(height: 10),
             FilledButton.tonalIcon(
@@ -654,11 +831,11 @@ class _ModelSection extends StatelessWidget {
             ),
             if (state.downloadError != null) ...[
               SizedBox(height: 8),
-              Text(state.downloadError!, style: const TextStyle(fontSize: 11, color: kBrand)),
+              Text(state.downloadError!, style: const TextStyle(fontSize: 12, color: kBrand)),
             ],
           ] else
             Text(tr('${model.note} · cached, works offline'),
-                style: const TextStyle(fontSize: 11, color: kDim)),
+                style: const TextStyle(fontSize: 12, color: kDim)),
         ],
       ),
     );
@@ -700,8 +877,8 @@ class _PromptFieldState extends State<_PromptField> {
       decoration: InputDecoration(
         labelText: 'Custom vocabulary (optional)',
         hintText: 'Names, jargon, e.g. Kikoe, Prasetyo, .srt…',
-        hintStyle: const TextStyle(fontSize: 11, color: kDim),
-        labelStyle: const TextStyle(fontSize: 11, color: kDim),
+        hintStyle: const TextStyle(fontSize: 12, color: kDim),
+        labelStyle: const TextStyle(fontSize: 12, color: kDim),
         border: InputBorder.none,
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -773,9 +950,9 @@ class _OptionsSection extends StatelessWidget {
             title: Text(tr('Filter silence (VAD)')),
             subtitle: state.useVad && !state.vadReady
                 ? Text(tr('Silero model (0.9 MB) downloads once'),
-                    style: TextStyle(fontSize: 11))
+                    style: TextStyle(fontSize: 12))
                 : Text(tr('Skip silent regions with Silero VAD'),
-                    style: TextStyle(fontSize: 11)),
+                    style: TextStyle(fontSize: 12)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -785,7 +962,7 @@ class _OptionsSection extends StatelessWidget {
             onChanged: state.setWordTimestamps,
             title: Text(tr('Word timestamps')),
             subtitle: Text(tr('Precise timing for every word (slower)'),
-                style: const TextStyle(fontSize: 11)),
+                style: const TextStyle(fontSize: 12)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -794,7 +971,7 @@ class _OptionsSection extends StatelessWidget {
             onChanged: state.setDiarize,
             title: Text(tr('Detect speakers')),
             subtitle: Text(tr('Label speaker changes (experimental)'),
-                style: const TextStyle(fontSize: 11)),
+                style: const TextStyle(fontSize: 12)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -803,7 +980,7 @@ class _OptionsSection extends StatelessWidget {
             onChanged: state.setAutoSave,
             title: Text(tr('Save automatically')),
             subtitle: Text(tr('SRT goes to Downloads/kikoe when done'),
-                style: TextStyle(fontSize: 11)),
+                style: TextStyle(fontSize: 12)),
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
@@ -878,7 +1055,7 @@ class _OptionsSection extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Downloading Silero VAD model… ${state.downloadPercentOf('vad-silero')}%',
-                      style: const TextStyle(fontSize: 11, color: kDim),
+                      style: const TextStyle(fontSize: 12, color: kDim),
                     ),
                   ),
                 ],
@@ -914,7 +1091,7 @@ class _ActionButton extends StatelessWidget {
       height: 54,
       child: FilledButton.icon(
         onPressed: ready ? state.transcribe : null,
-        style: FilledButton.styleFrom(backgroundColor: kBrand, foregroundColor: Colors.white),
+        style: FilledButton.styleFrom(backgroundColor: kBrandFill, foregroundColor: Colors.white),
         icon: const Icon(Icons.play_arrow),
         label: Text(done
             ? 'Transcribe again'
